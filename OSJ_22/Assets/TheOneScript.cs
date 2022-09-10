@@ -6,7 +6,6 @@ using UnityEngine.UI;
 
 public class TheOneScript : MonoBehaviour
 {
-    [SerializeField] private ManyHeadSelection selectionMenu;
     [System.Serializable]
     public class RoomManager
     {
@@ -27,6 +26,24 @@ public class TheOneScript : MonoBehaviour
             {
                 camera.gameObject.SetActive(false);
             }
+        }
+
+        [System.Serializable]
+        private class StaminaTest
+        {
+
+        }
+
+        [System.Serializable]
+        private class IntellectTest
+        {
+
+        }
+
+        [System.Serializable]
+        private class TemperamentTest
+        {
+
         }
 
         [SerializeField] private Room[] rooms;
@@ -66,14 +83,21 @@ public class TheOneScript : MonoBehaviour
     {
         public delegate void DeadDelegate();
 
-        [SerializeField] private float feedRatio = 5;
-        [SerializeField] private float hungerDepleteRatio = 1;
-        [SerializeField] private float engagementRatio = 5;
-        [SerializeField] private float engagementDepleteRatio = 1;
+        [SerializeField] private int ageLimit = 15;
+        [SerializeField] private int yearCycle = 60;
         [SerializeField] private Image hungerImage;
-        [SerializeField]
+        [Range(2, 10)] [SerializeField] private float feedRatio = 5;
+        [SerializeField] private float hungerDepleteRatio = 1;
+        [Range(2, 10)] [SerializeField] private float engagementRatio = 5;
+        [SerializeField] private float engagementDepleteRatio = 1;
+        [SerializeField] private Image engagementImage;
+
         private float currentHunger = 1;
-        private float currentEngagement;
+        private float currentEngagement = 1;
+        [SerializeField]
+        private int age = 0;
+        [SerializeField]
+        private float ageTimer = 0;
 
         public bool Dead { get; private set; }
         public int Gender { get; private set; } = -1;
@@ -88,6 +112,9 @@ public class TheOneScript : MonoBehaviour
             feedRatio = properties.feedRatio;
             engagementRatio = properties.engagementRatio;
             hungerImage = properties.hungerImage;
+            engagementImage = properties.engagementImage;
+            ageLimit = properties.ageLimit;
+            yearCycle = properties.yearCycle;
             Head = selectedHead;
             Gender = selectedGender;
             ResetEvent += delegate { Head.transform.SetParent(null); Dead = false; };
@@ -96,13 +123,27 @@ public class TheOneScript : MonoBehaviour
 
         public void Update()
         {
-            if (currentHunger > 0)
+            if (Dead == false && currentHunger > 0)
             {
+                if(age < ageLimit)
+                {
+                    ageTimer += Time.deltaTime;
+                    if(ageTimer >= yearCycle)
+                    {
+                        age++;
+                        ageTimer = 0;
+                    }
+                }
+                else
+                {
+                    Die();
+                    return;
+                }
                 currentHunger -= (1 / hungerDepleteRatio) * Time.deltaTime;
                 if (currentHunger <= 0)
                 {
-                    currentHunger = 0;
-                    DeadEvent.Invoke();
+                    Die();
+                    return;
                 }
                 hungerImage.fillAmount = currentHunger / 1;
                 
@@ -113,6 +154,7 @@ public class TheOneScript : MonoBehaviour
                     {
                         currentEngagement = 0;
                     }
+                    engagementImage.fillAmount = currentEngagement / 1;
                 }
             }
         }
@@ -132,8 +174,8 @@ public class TheOneScript : MonoBehaviour
                 currentHunger -= 1 / feedRatio;
                 if (currentHunger <= 0)
                 {
-                    currentHunger = 0;
-                    DeadEvent.Invoke();
+                    Die();
+                    return;
                 }
             }
             hungerImage.fillAmount = currentHunger / 1;
@@ -149,21 +191,31 @@ public class TheOneScript : MonoBehaviour
             {
                 currentEngagement -= 1 / engagementRatio;
             }
+            engagementImage.fillAmount = currentEngagement / 1;
+        }
+
+        private void Die()
+        {
+            currentHunger = 0;
+            hungerImage.fillAmount = currentHunger / 1;
+            DeadEvent.Invoke();
         }
     }
 
     public delegate void ResetDelegate();
 
+    [SerializeField] private Camera foodCamera;
+    [SerializeField] private Transform feedPoint;
+    [SerializeField] private float feedCooldown;
+    [SerializeField] private RoomManager roomManager;
+    [SerializeField] private ManyHeadSelection selectionMenu;
+    [Header("Many Head/Agent")]
     [SerializeField] private ManyHead manyHead;
     [SerializeField] private AIAgent agent;
     [SerializeField] private Material maleMaterial;
     [SerializeField] private Material femaleMaterial;
     [SerializeField] private MeshRenderer bodyMesh;
     [SerializeField] private Transform headObject;
-    [SerializeField] private RoomManager roomManager;
-    [SerializeField] private Camera foodCamera;
-    [SerializeField] private Transform feedPoint;
-    [SerializeField] private float feedCooldown;
 
     private Vector3 currentDir = Vector3.right;
     private float timer = -1;
@@ -312,7 +364,7 @@ public class TheOneScript : MonoBehaviour
         }
         else
         {
-
+            manyHead.Feed(true);
         }
     }
 }
@@ -523,7 +575,7 @@ public class AIAgent
 
         public override void OnStateUpdate()
         {
-            Debug.Log("Idling");
+            //Debug.Log("Idling");
         }
 
         public override void OnStateExit()
