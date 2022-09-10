@@ -18,6 +18,13 @@ public class TheOneScript : MonoBehaviour
             public Transform IdlePoint { get { return idlePoint; } }
             public ManyHeadTest RoomTest { get; private set; }
 
+            public Room(Room room, ManyHeadTest test)
+            {
+                camera = room.camera;
+                idlePoint = room.idlePoint;
+                RoomTest = test;
+            }
+
             public void Activate()
             {
                 camera.gameObject.SetActive(true);
@@ -29,6 +36,7 @@ public class TheOneScript : MonoBehaviour
             }
         }
 
+        [System.Serializable]
         public abstract class ManyHeadTest
         {
             public delegate void ModifyIntelligence(float amount);
@@ -38,6 +46,11 @@ public class TheOneScript : MonoBehaviour
             protected float cooldownTimer = -1;
 
             public bool Active { get; private set; } = false;
+
+            public ManyHeadTest(ManyHeadTest test)
+            {
+                cooldownTime = test.cooldownTime;
+            }
 
             public virtual void Initialise(ModifyIntelligence modifyMethod) { Active = true; }
 
@@ -53,9 +66,10 @@ public class TheOneScript : MonoBehaviour
                 }
             }
 
-            public virtual void Exit() { Active = false; }
+            public virtual void Exit() { Active = false; cooldownTimer = 0; }
         }
 
+        [System.Serializable]
         public class LightTest : ManyHeadTest
         {
             [SerializeField] private Light greenLight, redLight;
@@ -63,7 +77,19 @@ public class TheOneScript : MonoBehaviour
             private float currentTime = 0;
             private float timer = -1;
 
+            public LightTest(LightTest test) : base(test)
+            {
+                greenLight = test.greenLight;
+                redLight = test.redLight;
+            }
+
             public event ModifyIntelligence ModifyIntelligenceEvent;
+
+            public void Awake()
+            {
+                greenLight.enabled = false;
+                redLight.enabled = false;
+            }
 
             public override void Initialise(ModifyIntelligence modifyMethod)
             {
@@ -77,7 +103,7 @@ public class TheOneScript : MonoBehaviour
 
             public override void Update()
             {
-                if (cooldownTimer < 0)
+                if (Active == true)
                 {
                     timer += Time.deltaTime;
                     if (timer >= currentTime)
@@ -89,14 +115,14 @@ public class TheOneScript : MonoBehaviour
                     {
                         if (greenLight.enabled == true)
                         {
-                            //increase intelligence
                             greenLight.enabled = false;
+                            Debug.Log("Successful interaction");
                             ModifyIntelligenceEvent.Invoke(20);
                         }
                         else if(redLight.enabled == true)
                         {
-                            //decrease intelligence
                             redLight.enabled = false;
+                            Debug.Log("Unsuccessful interaction");
                             ModifyIntelligenceEvent.Invoke(-20);
                         }
                     }
@@ -110,13 +136,15 @@ public class TheOneScript : MonoBehaviour
             private void ToggleLight()
             {
                 int r = Random.Range(0, 100);
-                if (r < 50)
+                if (r < 20)
                 {
+                    Debug.Log("Green light");
                     greenLight.enabled = true;
                     redLight.enabled = false;
                 }
                 else
                 {
+                    Debug.Log("Red light");
                     greenLight.enabled = false;
                     redLight.enabled = true;
                 }
@@ -126,10 +154,13 @@ public class TheOneScript : MonoBehaviour
             {
                 base.Exit();
                 ModifyIntelligenceEvent = null;
+                greenLight.enabled = false;
+                redLight.enabled = false;
             }
         }
 
         [SerializeField] private Room[] rooms;
+        [SerializeField] private LightTest lightTest;
 
         public int CurrentRoomIndex { get; private set; } = -1;
         public Room CurrentRoom { get { return rooms[CurrentRoomIndex]; } }
@@ -137,6 +168,31 @@ public class TheOneScript : MonoBehaviour
         public void Awake()
         {
             ResetEvent += delegate { ActivateRoom(0); };
+            lightTest = new LightTest(lightTest);
+            lightTest.Awake();
+            for(int i = 0; i < rooms.Length; i++)
+            {
+                switch (i)
+                {
+                    case 1:
+                        rooms[i] = new Room(rooms[i], lightTest);
+                        break;
+                    case 2:
+                        rooms[i] = new Room(rooms[i], lightTest);
+                        break;
+                    case 3:
+                        rooms[i] = new Room(rooms[i], lightTest);
+                        break;
+                }
+            }
+        }
+
+        public void Update()
+        {
+            foreach(Room room in rooms)
+            {
+                room.RoomTest?.Update();
+            }
         }
 
         public bool ActivateRoom(int index)
@@ -340,6 +396,7 @@ public class TheOneScript : MonoBehaviour
     {
         manyHead.Update();
         selectionMenu.Update();
+        roomManager.Update();
         if (manyHead.Dead == true)
         {
             if (Input.GetKeyDown(KeyCode.R) == true)
@@ -375,6 +432,13 @@ public class TheOneScript : MonoBehaviour
                         agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
                     }
                 }
+                else if(roomManager.CurrentRoom.RoomTest?.Active == true)
+                {
+                    if(Input.GetButtonDown("Cancel") == true)
+                    {
+                        roomManager.CurrentRoom.RoomTest.Exit();
+                    }
+                }
                 else
                 {
                     if (Input.GetKeyDown(KeyCode.Alpha1) == true)
@@ -408,7 +472,7 @@ public class TheOneScript : MonoBehaviour
                     else if(Input.GetButtonDown("Submit") == true)
                     {
                         //start the puzzle for the room
-                        roomManager.CurrentRoom.RoomTest.Initialise(manyHead.ModifyIntelligence);
+                        roomManager.CurrentRoom.RoomTest?.Initialise(manyHead.ModifyIntelligence);
                     }
                     else if (timer == -1 && Input.GetButtonDown("Fire1") == true)
                     {
