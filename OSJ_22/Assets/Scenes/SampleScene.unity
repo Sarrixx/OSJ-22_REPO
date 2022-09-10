@@ -1677,8 +1677,8 @@ MonoBehaviour:
     cameraOffset: {x: 0, y: 0, z: -2}
     cameraMotionTime: 1
   manyHead:
-    ageLimit: 5
-    yearCycle: 5
+    ageLimit: 10
+    yearCycle: 10
     hungerImage: {fileID: 1159038161}
     feedRatio: 4
     hungerDepleteRatio: 50
@@ -1686,7 +1686,6 @@ MonoBehaviour:
     engagementDepleteRatio: 10
     engagementImage: {fileID: 885883498}
     age: 0
-    ageTimer: 0
   agent:
     agent: {fileID: 146184308}
   maleMaterial: {fileID: 2100000, guid: 06608b3bdabf59c4a968dcc7a35487a0, type: 2}

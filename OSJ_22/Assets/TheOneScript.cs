@@ -16,6 +16,7 @@ public class TheOneScript : MonoBehaviour
             [SerializeField] private Transform idlePoint;
 
             public Transform IdlePoint { get { return idlePoint; } }
+            public ManyHeadTest RoomTest { get; private set; }
 
             public void Activate()
             {
@@ -28,22 +29,104 @@ public class TheOneScript : MonoBehaviour
             }
         }
 
-        [System.Serializable]
-        private class StaminaTest
+        public abstract class ManyHeadTest
         {
+            public delegate void ModifyIntelligence(float amount);
 
+            [SerializeField] protected float cooldownTime = 10f;
+
+            protected float cooldownTimer = -1;
+
+            public bool Active { get; private set; } = false;
+
+            public virtual void Initialise(ModifyIntelligence modifyMethod) { Active = true; }
+
+            public virtual void Update() 
+            {
+                if(cooldownTimer >= 0)
+                {
+                    cooldownTimer += Time.deltaTime;
+                    if(cooldownTimer >= cooldownTime)
+                    {
+                        cooldownTimer = -1;
+                    }
+                }
+            }
+
+            public virtual void Exit() { Active = false; }
         }
 
-        [System.Serializable]
-        private class IntellectTest
+        public class LightTest : ManyHeadTest
         {
+            [SerializeField] private Light greenLight, redLight;
 
-        }
+            private float currentTime = 0;
+            private float timer = -1;
 
-        [System.Serializable]
-        private class TemperamentTest
-        {
+            public event ModifyIntelligence ModifyIntelligenceEvent;
 
+            public override void Initialise(ModifyIntelligence modifyMethod)
+            {
+                base.Initialise(modifyMethod);
+                greenLight.enabled = false;
+                redLight.enabled = false;
+                timer = 0;
+                currentTime = Random.Range(1, 5);
+                ModifyIntelligenceEvent = new ModifyIntelligence(modifyMethod);
+            }
+
+            public override void Update()
+            {
+                if (cooldownTimer < 0)
+                {
+                    timer += Time.deltaTime;
+                    if (timer >= currentTime)
+                    {
+                        timer = 0;
+                        ToggleLight();
+                    }
+                    if (Input.GetButtonDown("Fire1") == true)
+                    {
+                        if (greenLight.enabled == true)
+                        {
+                            //increase intelligence
+                            greenLight.enabled = false;
+                            ModifyIntelligenceEvent.Invoke(20);
+                        }
+                        else if(redLight.enabled == true)
+                        {
+                            //decrease intelligence
+                            redLight.enabled = false;
+                            ModifyIntelligenceEvent.Invoke(-20);
+                        }
+                    }
+                }
+                else
+                {
+                    base.Update();
+                }
+            }
+
+            private void ToggleLight()
+            {
+                int r = Random.Range(0, 100);
+                if (r < 50)
+                {
+                    greenLight.enabled = true;
+                    redLight.enabled = false;
+                }
+                else
+                {
+                    greenLight.enabled = false;
+                    redLight.enabled = true;
+                }
+            }
+
+            public override void Exit()
+            {
+                base.Exit();
+                ModifyIntelligenceEvent = null;
+            }
         }
 
         [SerializeField] private Room[] rooms;
@@ -94,9 +177,8 @@ public class TheOneScript : MonoBehaviour
 
         private float currentHunger = 1;
         private float currentEngagement = 1;
-        [SerializeField]
+        private float currentIntelligence = 0;
         private int age = 0;
-        [SerializeField]
         private float ageTimer = 0;
 
         public bool Dead { get; private set; }
@@ -199,6 +281,15 @@ public class TheOneScript : MonoBehaviour
             currentHunger = 0;
             hungerImage.fillAmount = currentHunger / 1;
             DeadEvent.Invoke();
+        }
+
+        public void ModifyIntelligence(float amount)
+        {
+            currentIntelligence += amount;
+            if(currentIntelligence < 0)
+            {
+                currentIntelligence = 0;
+            }
         }
     }
 
@@ -313,6 +404,11 @@ public class TheOneScript : MonoBehaviour
                         {
                             agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
                         }
+                    }
+                    else if(Input.GetButtonDown("Submit") == true)
+                    {
+                        //start the puzzle for the room
+                        roomManager.CurrentRoom.RoomTest.Initialise(manyHead.ModifyIntelligence);
                     }
                     else if (timer == -1 && Input.GetButtonDown("Fire1") == true)
                     {
