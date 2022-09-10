@@ -288,7 +288,7 @@ GameObject:
   - component: {fileID: 146184308}
   m_Layer: 0
   m_Name: ManyHead
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -995,7 +995,7 @@ GameObject:
   - component: {fileID: 575022913}
   m_Layer: 0
   m_Name: Head A
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1322,7 +1322,7 @@ GameObject:
   - component: {fileID: 718132785}
   m_Layer: 0
   m_Name: Head B
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -1526,31 +1526,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 58542f27a76dc7143b4a64e51dc4e888, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  gameManager:
-    manyHead:
-      feedRatio: 3
-      hungerDepleteRatio: 20
-      engagementRatio: 3
-      engagementDepleteRatio: 5
-    agent:
-      agent: {fileID: 146184308}
-    maleMaterial: {fileID: 2100000, guid: 06608b3bdabf59c4a968dcc7a35487a0, type: 2}
-    femaleMaterial: {fileID: 2100000, guid: 2a43e1bb59730fd489c7b0bb4fbd19ef, type: 2}
-    bodyMesh: {fileID: 146184305}
-    headObject: {fileID: 457658903}
-    roomManager:
-      rooms:
-      - camera: {fileID: 963194227}
-        idlePoint: {fileID: 1905023358}
-      - camera: {fileID: 133778186}
-        idlePoint: {fileID: 474187541}
-      - camera: {fileID: 1770657}
-        idlePoint: {fileID: 155988750}
-      - camera: {fileID: 1012918910}
-        idlePoint: {fileID: 164218710}
-    foodCamera: {fileID: 1260162967}
-    feedPoint: {fileID: 604467143}
-    feedCooldown: 3
   selectionMenu:
     eggRotateSpeed: 1
     eggATransform: {fileID: 175995699}
@@ -1573,6 +1548,31 @@ MonoBehaviour:
     - {x: -75.5, y: 0, z: -20}
     cameraOffset: {x: 0, y: 0, z: -2}
     cameraMotionTime: 1
+  manyHead:
+    feedRatio: 5
+    hungerDepleteRatio: 50
+    engagementRatio: 3
+    engagementDepleteRatio: 10
+    hungerImage: {fileID: 1159038161}
+  agent:
+    agent: {fileID: 146184308}
+  maleMaterial: {fileID: 2100000, guid: 06608b3bdabf59c4a968dcc7a35487a0, type: 2}
+  femaleMaterial: {fileID: 2100000, guid: 2a43e1bb59730fd489c7b0bb4fbd19ef, type: 2}
+  bodyMesh: {fileID: 146184305}
+  headObject: {fileID: 457658903}
+  roomManager:
+    rooms:
+    - camera: {fileID: 963194227}
+      idlePoint: {fileID: 1905023358}
+    - camera: {fileID: 133778186}
+      idlePoint: {fileID: 474187541}
+    - camera: {fileID: 1770657}
+      idlePoint: {fileID: 155988750}
+    - camera: {fileID: 1012918910}
+      idlePoint: {fileID: 164218710}
+  foodCamera: {fileID: 1260162967}
+  feedPoint: {fileID: 604467143}
+  feedCooldown: 5
 --- !u!4 &846193964
 Transform:
   m_ObjectHideFlags: 0
@@ -1662,7 +1662,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 7f262a26460b0c6419724cb9ea6e5810, type: 3}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -1904,7 +1904,7 @@ MonoBehaviour:
   m_OnCullStateChanged:
     m_PersistentCalls:
       m_Calls: []
-  m_Sprite: {fileID: 10907, guid: 0000000000000000f000000000000000, type: 0}
+  m_Sprite: {fileID: 21300000, guid: 7f262a26460b0c6419724cb9ea6e5810, type: 3}
   m_Type: 3
   m_PreserveAspect: 0
   m_FillCenter: 1
@@ -2170,7 +2170,7 @@ GameObject:
   - component: {fileID: 1538223536}
   m_Layer: 0
   m_Name: Head C
-  m_TagString: Untagged
+  m_TagString: Player
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

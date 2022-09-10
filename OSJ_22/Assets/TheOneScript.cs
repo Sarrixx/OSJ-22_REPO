@@ -1,4 +1,3 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -7,42 +6,7 @@ using UnityEngine.UI;
 
 public class TheOneScript : MonoBehaviour
 {
-    [SerializeField] private GameManager gameManager;
     [SerializeField] private ManyHeadSelection selectionMenu;
-
-    void Awake()
-    {
-        gameManager.Awake();
-        selectionMenu.Awake();
-    }
-
-    // Start is called before the first frame update
-    void Start()
-    {
-        gameManager.Start();
-        selectionMenu.Start();
-    }
-
-    // Update is called once per frame
-    void Update()
-    {
-        gameManager.Update();
-        selectionMenu.Update();
-    }
-}
-
-public abstract class Instance
-{
-    public virtual void Awake() { }
-    public virtual void Start() { }
-    public virtual void Update() { }
-    public virtual void Initialise() { }
-    public virtual void Disable() { }
-}
-
-[System.Serializable]
-public class GameManager : Instance
-{
     [System.Serializable]
     public class RoomManager
     {
@@ -106,7 +70,8 @@ public class GameManager : Instance
         [SerializeField] private float hungerDepleteRatio = 1;
         [SerializeField] private float engagementRatio = 5;
         [SerializeField] private float engagementDepleteRatio = 1;
-
+        [SerializeField] private Image hungerImage;
+        [SerializeField]
         private float currentHunger = 1;
         private float currentEngagement;
 
@@ -120,6 +85,9 @@ public class GameManager : Instance
         {
             hungerDepleteRatio = properties.hungerDepleteRatio;
             engagementDepleteRatio = properties.engagementDepleteRatio;
+            feedRatio = properties.feedRatio;
+            engagementRatio = properties.engagementRatio;
+            hungerImage = properties.hungerImage;
             Head = selectedHead;
             Gender = selectedGender;
             ResetEvent += delegate { Head.transform.SetParent(null); Dead = false; };
@@ -136,7 +104,8 @@ public class GameManager : Instance
                     currentHunger = 0;
                     DeadEvent.Invoke();
                 }
-
+                hungerImage.fillAmount = currentHunger / 1;
+                
                 if (currentEngagement > 0)
                 {
                     currentEngagement -= (1 / engagementDepleteRatio) * Time.deltaTime;
@@ -153,11 +122,21 @@ public class GameManager : Instance
             if (decrease == false)
             {
                 currentHunger += 1 / feedRatio;
+                if(currentHunger > 1)
+                {
+                    currentHunger = 1;
+                }
             }
             else
             {
                 currentHunger -= 1 / feedRatio;
+                if (currentHunger <= 0)
+                {
+                    currentHunger = 0;
+                    DeadEvent.Invoke();
+                }
             }
+            hungerImage.fillAmount = currentHunger / 1;
         }
 
         public void Engage(bool decrease = false)
@@ -191,12 +170,12 @@ public class GameManager : Instance
 
     public static event ResetDelegate ResetEvent;
 
-    public static GameManager Instance { get; private set; }
+    public static TheOneScript Instance { get; private set; }
 
-    public override void Awake()
+    public void Awake()
     {
         Instance = this;
-        ResetEvent = delegate 
+        ResetEvent = delegate
         {
             bodyMesh.gameObject.SetActive(false);
             foodCamera.gameObject.SetActive(false);
@@ -204,17 +183,20 @@ public class GameManager : Instance
         bodyMesh.gameObject.SetActive(false);
         agent.Awake();
         roomManager.Awake();
+        selectionMenu.Awake();
     }
 
-    public override void Start()
+    public void Start()
     {
+        selectionMenu.Start();
         roomManager.ActivateRoom(0);
         foodCamera.gameObject.SetActive(false);
     }
 
-    public override void Update()
+    public void Update()
     {
         manyHead.Update();
+        selectionMenu.Update();
         if (manyHead.Dead == true)
         {
             if (Input.GetKeyDown(KeyCode.R) == true)
@@ -230,7 +212,7 @@ public class GameManager : Instance
                 if (foodCamera.gameObject.activeSelf == true)
                 {
                     Vector3 relativeDir = foodCamera.transform.InverseTransformDirection(currentDir);
-                    if(Vector3.Angle(foodCamera.transform.forward, relativeDir) > 45f)
+                    if (Vector3.Angle(foodCamera.transform.forward, relativeDir) > 45f)
                     {
                         Vector3 step = Vector3.RotateTowards(foodCamera.transform.forward, relativeDir, 0.5f * Time.deltaTime, 0.0f);
                         foodCamera.transform.forward = step;
@@ -240,11 +222,11 @@ public class GameManager : Instance
                         currentDir = -currentDir;
                     }
 
-                    if(Input.GetButtonDown("Fire1") == true)
+                    if (Input.GetButtonDown("Fire1") == true)
                     {
                         ShootFood();
                     }
-                    else if(Input.GetButtonDown("Cancel") == true)
+                    else if (Input.GetButtonDown("Cancel") == true)
                     {
                         foodCamera.gameObject.SetActive(false);
                         agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
@@ -280,7 +262,7 @@ public class GameManager : Instance
                             agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
                         }
                     }
-                    else if(timer == -1 && Input.GetButtonDown("Fire1") == true)
+                    else if (timer == -1 && Input.GetButtonDown("Fire1") == true)
                     {
                         foodCamera.gameObject.SetActive(true);
                         agent.SetState(new AIAgent.MoveState(agent, feedPoint.position));
@@ -289,10 +271,10 @@ public class GameManager : Instance
             }
         }
 
-        if(timer > -1)
+        if (timer > -1)
         {
             timer += Time.deltaTime;
-            if(timer >= feedCooldown)
+            if (timer >= feedCooldown)
             {
                 timer = -1;
             }
@@ -307,13 +289,14 @@ public class GameManager : Instance
         {
             bodyMesh.material = maleMaterial;
         }
-        else if(gender == 0)
+        else if (gender == 0)
         {
             bodyMesh.material = femaleMaterial;
         }
         bodyMesh.gameObject.SetActive(true);
         head.SetParent(headObject);
         head.localPosition = Vector3.zero;
+        head.localEulerAngles = Vector3.zero;
         agent.MoveToPosition(roomManager.CurrentRoom.IdlePoint.position);
         agent.SetState(new AIAgent.IdleState(agent));
     }
@@ -323,11 +306,19 @@ public class GameManager : Instance
         timer = 0;
         foodCamera.gameObject.SetActive(false);
         agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
+        if(Physics.Raycast(foodCamera.transform.position, foodCamera.transform.forward, out RaycastHit hit, 10f) == true)
+        {
+            if (hit.collider.CompareTag("Player") == true) { manyHead.Feed(); } else { manyHead.Feed(true); }
+        }
+        else
+        {
+
+        }
     }
 }
 
 [System.Serializable]
-public class ManyHeadSelection : Instance
+public class ManyHeadSelection
 {
     [System.Serializable]
     private class UIElementGenderEgg
@@ -374,13 +365,13 @@ public class ManyHeadSelection : Instance
     private int selectedHead = -1;
     private float lerpTimer = -1;
 
-    public override void Awake()
+    public void Awake()
     {
         eggAElement.Initialise();
         eggBElement.Initialise();
     }
 
-    public override void Initialise()
+    public void Initialise()
     {
         selectedGender = 0; //reset gender
         selectedHead = -1; //reset head
@@ -402,17 +393,18 @@ public class ManyHeadSelection : Instance
             if (i < headGlobalPositions.Length)
             {
                 heads[i].transform.position = headGlobalPositions[i];
+                heads[i].transform.eulerAngles = Vector3.zero;
             }
         }
     }
 
-    public override void Start()
+    public void Start()
     {
-        GameManager.ResetEvent += Initialise;
+        TheOneScript.ResetEvent += Initialise;
         Initialise();
     }
 
-    public override void Update()
+    public void Update()
     {
         eggATransform.transform.Rotate(0, eggRotateSpeed, 0);
         eggBTransform.transform.Rotate(0, eggRotateSpeed, 0);
@@ -479,14 +471,14 @@ public class ManyHeadSelection : Instance
                 headUIImage.gameObject.SetActive(false);
                 headCamera.gameObject.SetActive(false);
                 lerpTimer = -1;
-                GameManager.Instance.SpawnManyHead(heads[selectedHead].transform, selectedGender);
+                TheOneScript.Instance.SpawnManyHead(heads[selectedHead].transform, selectedGender);
             }
         }
     }
 }
 
 [System.Serializable]
-public class AIAgent : Instance
+public class AIAgent
 {
     [SerializeField] private NavMeshAgent agent;
 
@@ -592,12 +584,12 @@ public class AIAgent : Instance
         agent = agentInstance;
     }
 
-    public override void Awake()
+    public void Awake()
     {
         stateMachine = new FiniteStateMachine();
     }
 
-    public override void Update()
+    public void Update()
     {
         stateMachine.Update();
     }
