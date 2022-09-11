@@ -538,12 +538,8 @@ public class TheOneScript : MonoBehaviour
         [SerializeField] private Image hungerImage;
         [Range(2, 10)] [SerializeField] private float feedRatio = 5;
         [SerializeField] private float hungerDepleteRatio = 1;
-        [Range(2, 10)] [SerializeField] private float engagementRatio = 5;
-        [SerializeField] private float engagementDepleteRatio = 1;
-        [SerializeField] private Image engagementImage;
 
         private float currentHunger = 1;
-        private float currentEngagement = 1;
         private float currentIntelligence = 0;
         private int age = 0;
         private float ageTimer = 0;
@@ -557,11 +553,8 @@ public class TheOneScript : MonoBehaviour
         public ManyHead(ManyHead properties, GameObject selectedHead, int selectedGender)
         {
             hungerDepleteRatio = properties.hungerDepleteRatio;
-            engagementDepleteRatio = properties.engagementDepleteRatio;
             feedRatio = properties.feedRatio;
-            engagementRatio = properties.engagementRatio;
             hungerImage = properties.hungerImage;
-            engagementImage = properties.engagementImage;
             ageLimit = properties.ageLimit;
             yearCycle = properties.yearCycle;
             Head = selectedHead;
@@ -595,16 +588,6 @@ public class TheOneScript : MonoBehaviour
                     return;
                 }
                 hungerImage.fillAmount = currentHunger / 1;
-                
-                if (currentEngagement > 0)
-                {
-                    currentEngagement -= (1 / engagementDepleteRatio) * Time.deltaTime;
-                    if (currentEngagement <= 0)
-                    {
-                        currentEngagement = 0;
-                    }
-                    engagementImage.fillAmount = currentEngagement / 1;
-                }
             }
         }
 
@@ -628,19 +611,6 @@ public class TheOneScript : MonoBehaviour
                 }
             }
             hungerImage.fillAmount = currentHunger / 1;
-        }
-
-        public void Engage(bool decrease = false)
-        {
-            if (decrease == false)
-            {
-                currentEngagement += 1 / engagementRatio;
-            }
-            else
-            {
-                currentEngagement -= 1 / engagementRatio;
-            }
-            engagementImage.fillAmount = currentEngagement / 1;
         }
 
         private void Die()
@@ -672,6 +642,7 @@ public class TheOneScript : MonoBehaviour
     [SerializeField] private float roomTransitionDelay = 1f;
     [SerializeField] private RoomManager roomManager;
     [SerializeField] private ManyHeadSelection selectionMenu;
+    [SerializeField] private Text camText;
     [Header("Many Head/Agent")]
     [SerializeField] private ManyHead manyHead;
     [SerializeField] private AIAgent agent;
@@ -696,6 +667,7 @@ public class TheOneScript : MonoBehaviour
         {
             bodyMesh.gameObject.SetActive(false);
             foodCamera.gameObject.SetActive(false);
+            camText.text = "";
         };
         bodyMesh.gameObject.SetActive(false);
         agent.Awake();
@@ -708,6 +680,7 @@ public class TheOneScript : MonoBehaviour
         selectionMenu.Start();
         roomManager.ActivateRoom(0);
         foodCamera.gameObject.SetActive(false);
+        camText.text = "";
     }
 
     public void Update()
@@ -738,6 +711,7 @@ public class TheOneScript : MonoBehaviour
                     foodCamera.gameObject.SetActive(false);
                     audioSource.PlayOneShot(camerSwapClip);
                     agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
+                    camText.gameObject.SetActive(true);
                 }
             }
             if (agent.Busy == false)
@@ -753,19 +727,23 @@ public class TheOneScript : MonoBehaviour
                 {
                     if (Input.GetKeyDown(KeyCode.Alpha1) == true)
                     {
-                        StartCoroutine(RoomTransition(1));
+                        StartCoroutine(RoomTransition(0));
+                        camText.text = "FEEDING ROOM";
                     }
                     else if (Input.GetKeyDown(KeyCode.Alpha2) == true)
                     {
-                        StartCoroutine(RoomTransition(2));
+                        StartCoroutine(RoomTransition(1));
+                        camText.text = "REACTION TEST";
                     }
                     else if (Input.GetKeyDown(KeyCode.Alpha3) == true)
                     {
-                        StartCoroutine(RoomTransition(3));
+                        StartCoroutine(RoomTransition(2));
+                        camText.text = "MEMORY TEST";
                     }
                     else if (Input.GetKeyDown(KeyCode.Alpha4) == true)
                     {
-                        StartCoroutine(RoomTransition(4));
+                        StartCoroutine(RoomTransition(3));
+                        camText.text = "ASSESSMENT ROOM";
                     }
                     else if(Input.GetButtonDown("Submit") == true)
                     {
@@ -775,6 +753,7 @@ public class TheOneScript : MonoBehaviour
                     else if (timer == -1 && Input.GetButtonDown("Fire1") == true)
                     {
                         foodCamera.gameObject.SetActive(true);
+                        camText.gameObject.SetActive(false);
                         audioSource.PlayOneShot(camerSwapClip);
                         agent.SetState(new AIAgent.MoveState(agent, feedPoint.position));
                     }
@@ -824,12 +803,14 @@ public class TheOneScript : MonoBehaviour
         head.localEulerAngles = Vector3.zero;
         agent.MoveToPosition(roomManager.CurrentRoom.IdlePoint.position);
         agent.SetState(new AIAgent.IdleState(agent));
+        camText.text = "FEEDING ROOM";
     }
 
     public void ShootFood()
     {
         timer = 0;
         foodCamera.gameObject.SetActive(false);
+        camText.gameObject.SetActive(true);
         agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
         if(Physics.Raycast(foodCamera.transform.position, foodCamera.transform.forward, out RaycastHit hit, 10f) == true)
         {
