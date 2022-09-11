@@ -187,12 +187,13 @@ public class TheOneScript : MonoBehaviour
             [SerializeField] private float guessTime = 5f;
             [SerializeField] private float coolDownTime = 2f;
             [SerializeField] private Camera roomCamera; //Change with player
+            [SerializeField] private Sprite blankText; //Change with player
 
-            private GameObject currentSelectedObj;
-            private GameObject currentTarget;
+            [SerializeField]  private GameObject currentSelectedObj;
+            [SerializeField]  private GameObject currentTarget;
             private int[] correctOrder; //Set on start
             private int[] currentOrder; //Change with player
-            private ActivityState state = ActivityState.show;
+            [SerializeField] private ActivityState state = ActivityState.show;
             private float currentTime = 0;
             private float timer = -1;
 
@@ -209,6 +210,7 @@ public class TheOneScript : MonoBehaviour
                 viewTime = test.viewTime;
                 guessTime = test.guessTime;
                 coolDownTime = test.coolDownTime;
+                blankText = test.blankText;
             }
             
             public void Awake()
@@ -266,6 +268,15 @@ public class TheOneScript : MonoBehaviour
                                     currentTarget.GetComponent<Collider>().enabled = false;
                                     currentSelectedObj = null;
                                     ModifyIntelligenceEvent.Invoke(20);
+                                    bool allCorrect = true;
+                                    for (int i = 0; i < correctOrder.Length; i++)
+                                    {
+                                        if (correctOrder[i] != currentOrder[i])
+                                            allCorrect = false;
+                                    }
+                                    //All correct
+                                    if (allCorrect)
+                                        ChangeActivityState(ActivityState.cooldown);
                                 }
                                 else
                                 {
@@ -286,7 +297,7 @@ public class TheOneScript : MonoBehaviour
                         //Held
                         if (Input.GetButton("Fire1"))
                         {
-                            currentSelectedObj.transform.position = roomCamera.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, -roomCamera.transform.position.z));
+                            
 
                             //raycast for target
                             RaycastHit hit;
@@ -295,11 +306,13 @@ public class TheOneScript : MonoBehaviour
                             {
                                 //Set target
                                 currentTarget = hit.transform.gameObject;
+                                currentSelectedObj.transform.position = currentTarget.transform.position;
                             }
                             else
                             {
                                 //Remove target
                                 currentTarget = null;
+                                currentSelectedObj.transform.position = roomCamera.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, -roomCamera.transform.position.z));
                             }
                         }
                     }
@@ -360,7 +373,7 @@ public class TheOneScript : MonoBehaviour
             {
                 foreach (Image item in tvScreenLocations)
                 {
-                    item.sprite = null;
+                    item.sprite = blankText;
                 }
             }
 
@@ -370,6 +383,7 @@ public class TheOneScript : MonoBehaviour
                 //Get ind of current object
                 //get ind of target obj
                 //correctOrder[targetind] == currentObjInd
+                //Debug.Log(currentSelectedObj.name);
                 int targetInd = -1;
                 int selectedObjInd = -1;
                 for (int i = 0; i < objPlaceLocations.Length; i++)
@@ -379,12 +393,14 @@ public class TheOneScript : MonoBehaviour
                 }
                 for (int i = 0; i < moveableObjects.Length; i++)
                 {
-                    if (moveableObjects[i] == currentSelectedObj)
+                    if (moveableObjects[i].gameObject == currentSelectedObj.gameObject)
                         selectedObjInd = i;
                 }
+                //Debug.Log("target: " + targetInd + " selected: " + selectedObjInd + " : correctOrder: " + correctOrder[targetInd]);
                 if (correctOrder[targetInd] == selectedObjInd)
                 {
                     currentOrder[targetInd] = selectedObjInd;
+
                     return true;
                 }
                     
@@ -413,6 +429,7 @@ public class TheOneScript : MonoBehaviour
                 state = newState;
                 if (newState == ActivityState.show)
                 {
+                    ResetActivity();
                     currentTime = viewTime;
                     ShowOrder();
                     foreach (Collider item in moveableObjects)
@@ -434,12 +451,13 @@ public class TheOneScript : MonoBehaviour
                 if (newState == ActivityState.cooldown)
                 {
                     currentTime = coolDownTime;
+                    currentSelectedObj = null;
                     foreach (Collider item in moveableObjects)
                     {
                         item.enabled = false;
                     }
-                    ResetActivity();
-                    HideOrder();
+                    
+                    ShowOrder();
                 }
             }
 
