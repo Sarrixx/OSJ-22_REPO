@@ -6,3 +6,7 @@ OSJ_22/.vs/
 OSJ_22/ProjectSettings/Packages/com.unity.testtools.codecoverage/Settings.json
 OSJ_22/Assembly-CSharp.csproj
 OSJ_22/UserSettings/Layouts/default-2021.dwlt
+OSJ_22/Assembly-CSharp.csproj
+OSJ_22/Assembly-CSharp.csproj
+*.dwlt
+*.csproj
