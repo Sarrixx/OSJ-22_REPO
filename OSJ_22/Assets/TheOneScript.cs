@@ -407,32 +407,32 @@ public class TheOneScript : MonoBehaviour
         else if (bodyMesh.gameObject.activeSelf == true)
         {
             agent.Update();
+            if (foodCamera.gameObject.activeSelf == true)
+            {
+                Vector3 relativeDir = foodCamera.transform.InverseTransformDirection(currentDir);
+                if (Vector3.Angle(foodCamera.transform.forward, relativeDir) > 45f)
+                {
+                    Vector3 step = Vector3.RotateTowards(foodCamera.transform.forward, relativeDir, 0.5f * Time.deltaTime, 0.0f);
+                    foodCamera.transform.forward = step;
+                }
+                else
+                {
+                    currentDir = -currentDir;
+                }
+
+                if (Input.GetButtonDown("Fire1") == true)
+                {
+                    ShootFood();
+                }
+                else if (Input.GetButtonDown("Cancel") == true)
+                {
+                    foodCamera.gameObject.SetActive(false);
+                    agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
+                }
+            }
             if (agent.Busy == false)
             {
-                if (foodCamera.gameObject.activeSelf == true)
-                {
-                    Vector3 relativeDir = foodCamera.transform.InverseTransformDirection(currentDir);
-                    if (Vector3.Angle(foodCamera.transform.forward, relativeDir) > 45f)
-                    {
-                        Vector3 step = Vector3.RotateTowards(foodCamera.transform.forward, relativeDir, 0.5f * Time.deltaTime, 0.0f);
-                        foodCamera.transform.forward = step;
-                    }
-                    else
-                    {
-                        currentDir = -currentDir;
-                    }
-
-                    if (Input.GetButtonDown("Fire1") == true)
-                    {
-                        ShootFood();
-                    }
-                    else if (Input.GetButtonDown("Cancel") == true)
-                    {
-                        foodCamera.gameObject.SetActive(false);
-                        agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
-                    }
-                }
-                else if(roomManager.CurrentRoom.RoomTest?.Active == true)
+                if(roomManager.CurrentRoom.RoomTest?.Active == true)
                 {
                     if(Input.GetButtonDown("Cancel") == true)
                     {
