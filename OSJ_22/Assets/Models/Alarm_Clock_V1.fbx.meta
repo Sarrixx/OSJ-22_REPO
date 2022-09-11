@@ -1,11 +1,8 @@
 fileFormatVersion: 2
-guid: 9314f41a85e1c0d4281929062b5faccc
+guid: e011108da80d2d34b878938b78140717
 ModelImporter:
   serializedVersion: 21300
-  internalIDToNameTable:
-  - first:
-      74: 8440248360967096626
-    second: Camera|CameraAction
+  internalIDToNameTable: []
   externalObjects: {}
   materials:
     materialImportMode: 2
@@ -50,7 +47,7 @@ ModelImporter:
     nodeNameCollisionStrategy: 1
     fileIdsGeneration: 2
     swapUVChannels: 0
-    generateSecondaryUV: 1
+    generateSecondaryUV: 0
     useFileUnits: 1
     keepQuads: 0
     weldVertices: 1

@@ -212,12 +212,13 @@ public class TheOneScript : MonoBehaviour
             [SerializeField] private float coolDownTime = 2f;
             [SerializeField] private Camera roomCamera; //Change with player
             [SerializeField] private Sprite blankText; //Change with player
+            [SerializeField] private Light tvLight;
 
-            [SerializeField]  private GameObject currentSelectedObj;
-            [SerializeField]  private GameObject currentTarget;
+            private GameObject currentSelectedObj;
+            private GameObject currentTarget;
             private int[] correctOrder; //Set on start
             private int[] currentOrder; //Change with player
-            [SerializeField] private ActivityState state = ActivityState.show;
+            private ActivityState state = ActivityState.show;
             private float currentTime = 0;
             private float timer = -1;
 
@@ -235,21 +236,25 @@ public class TheOneScript : MonoBehaviour
                 guessTime = test.guessTime;
                 coolDownTime = test.coolDownTime;
                 blankText = test.blankText;
+                tvLight = test.tvLight;
             }
-            
+
             public void Awake()
             {
-                
+                tvLight.gameObject.SetActive(false);
             }
 
             public override void Initialise(ModifyIntelligence modifyMethod)
             {
-                base.Initialise(modifyMethod);
-                timer = 0;
-                currentTime = viewTime;
-                ModifyIntelligenceEvent = new ModifyIntelligence(modifyMethod);
-                ChangeActivityState(ActivityState.show);
-                ShowOrder();
+                if (cooldownTimer < 0)
+                {
+                    base.Initialise(modifyMethod);
+                    timer = 0;
+                    currentTime = viewTime;
+                    ModifyIntelligenceEvent = new ModifyIntelligence(modifyMethod);
+                    ChangeActivityState(ActivityState.show);
+                    ShowOrder();
+                }
             }
 
             public override void Update()
@@ -319,10 +324,8 @@ public class TheOneScript : MonoBehaviour
                             }
                         }
                         //Held
-                        if (Input.GetButton("Fire1"))
+                        else if (Input.GetButton("Fire1"))
                         {
-                            
-
                             //raycast for target
                             RaycastHit hit;
                             Ray ray = roomCamera.ScreenPointToRay(Input.mousePosition);
@@ -383,13 +386,13 @@ public class TheOneScript : MonoBehaviour
                 //Random Order for in correctOrder
                 for (int i = 0; i < correctOrder.Length; i++)
                 {
-                    
                     int randomInd = Random.Range(0, placementIndexs.Count);
                     int correctInd = placementIndexs[randomInd];
                     placementIndexs.RemoveAt(randomInd);
                     tvScreenLocations[i].sprite = objSprites[correctInd];
                     correctOrder[i] = correctInd;
                 }
+                tvLight.gameObject.SetActive(true);
                 //randomize 
             }
 
@@ -399,6 +402,7 @@ public class TheOneScript : MonoBehaviour
                 {
                     item.sprite = blankText;
                 }
+                tvLight.gameObject.SetActive(false);
             }
 
             public bool CheckCurrentObject()
@@ -445,7 +449,6 @@ public class TheOneScript : MonoBehaviour
                     item.GetComponent<Collider>().enabled = true;
                 }
                 HideOrder();
-
             }
 
             void ChangeActivityState(ActivityState newState)
@@ -480,7 +483,6 @@ public class TheOneScript : MonoBehaviour
                     {
                         item.enabled = false;
                     }
-                    
                     ShowOrder();
                 }
             }
@@ -490,8 +492,6 @@ public class TheOneScript : MonoBehaviour
                 base.Exit();
                 ModifyIntelligenceEvent = null;
                 ResetActivity();
-
-                
             }
         }
 
@@ -519,7 +519,7 @@ public class TheOneScript : MonoBehaviour
                 correctMat = test.correctMat;
                 activeTime = test.activeTime;
                 turnTime = test.turnTime;
-                interval = test.interval;
+                intervalTime = test.intervalTime;
             }
 
             public override void Initialise(ModifyIntelligence modifyMethod)
@@ -546,7 +546,7 @@ public class TheOneScript : MonoBehaviour
                             timer += Time.deltaTime;
                             if(interval == true)
                             {
-                                if(timer >= 1)
+                                if(timer >= intervalTime)
                                 {
                                     timer = 0;
                                     interval = false;
@@ -578,7 +578,7 @@ public class TheOneScript : MonoBehaviour
                             timer += Time.deltaTime;
                             if (interval == true)
                             {
-                                if (timer >= 1)
+                                if (timer >= intervalTime)
                                 {
                                     timer = 0;
                                     interval = false;
@@ -931,6 +931,7 @@ public class TheOneScript : MonoBehaviour
     [SerializeField] private RoomManager roomManager;
     [SerializeField] private ManyHeadSelection selectionMenu;
     [SerializeField] private Text camText;
+    [SerializeField] private Text alarmText;
     [Header("Many Head/Agent")]
     [SerializeField] private ManyHead manyHead;
     [SerializeField] private AIAgent agent;
@@ -939,7 +940,7 @@ public class TheOneScript : MonoBehaviour
     [SerializeField] private SkinnedMeshRenderer bodyMesh;
     [SerializeField] private Transform headObject;
 
-    private float timer = -1;
+    private float foodTimer = -1;
     private AudioSource audioSource;
     private bool transitioning = false;
 
@@ -976,6 +977,8 @@ public class TheOneScript : MonoBehaviour
         manyHead.Update();
         selectionMenu.Update();
         roomManager.Update();
+        //alarmText.text = string.Format("{00:00}:{01:00}", System.DateTime.UtcNow.ToLocalTime().Hour, System.DateTime.UtcNow.ToLocalTime().Minute);
+        alarmText.text = string.Format("{0:hh:mm tt}", System.DateTime.Now);
         if (manyHead.Dead == true)
         {
             if (Input.GetKeyDown(KeyCode.R) == true)
@@ -986,16 +989,17 @@ public class TheOneScript : MonoBehaviour
         else if (bodyMesh.gameObject.activeSelf == true)
         {
             agent.Update();
-            if (foodCamera.gameObject.activeSelf == true)
+            if (foodCamera.gameObject.activeSelf == true && transitioning == false)
             {
                 foodCamera.transform.localEulerAngles = new Vector3(45, Mathf.PingPong(Time.time * foodCameraSpeed, rotationAngle) - startingAngle, 0);
 
                 if (Input.GetButtonDown("Fire1") == true)
                 {
-                    ShootFood();
+                    StartCoroutine(ShootFood());
                 }
                 else if (Input.GetButtonDown("Cancel") == true)
                 {
+                    foodTimer = 0;
                     foodCamera.gameObject.SetActive(false);
                     audioSource.PlayOneShot(camerSwapClip);
                     agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
@@ -1026,19 +1030,19 @@ public class TheOneScript : MonoBehaviour
                     else if (Input.GetKeyDown(KeyCode.Alpha3) == true)
                     {
                         StartCoroutine(RoomTransition(2));
-                        camText.text = "MEMORY TEST";
+                        camText.text = "MEMORY TEST A";
                     }
                     else if (Input.GetKeyDown(KeyCode.Alpha4) == true)
                     {
                         StartCoroutine(RoomTransition(3));
-                        camText.text = "ASSESSMENT ROOM";
+                        camText.text = "MEMORY TEST B";
                     }
                     else if(Input.GetButtonDown("Submit") == true)
                     {
                         //start the puzzle for the room
-                        roomManager.CurrentRoom.RoomTest?.Initialise(manyHead.ModifyIntelligence);
+                        roomManager.CurrentRoom.RoomTest?.Initialise(Respond);
                     }
-                    else if (timer == -1 && Input.GetButtonDown("Fire1") == true)
+                    else if (foodTimer == -1 && Input.GetButtonDown("Fire1") == true)
                     {
                         foodCamera.gameObject.SetActive(true);
                         camText.gameObject.SetActive(false);
@@ -1049,13 +1053,26 @@ public class TheOneScript : MonoBehaviour
             }
         }
 
-        if (timer > -1)
+        if (foodTimer > -1)
         {
-            timer += Time.deltaTime;
-            if (timer >= feedCooldown)
+            foodTimer += Time.deltaTime;
+            if (foodTimer >= feedCooldown)
             {
-                timer = -1;
+                foodTimer = -1;
             }
+        }
+    }
+
+    private void Respond(float amount)
+    {
+        manyHead.ModifyIntelligence(amount);
+        if(amount > 0)
+        {
+            agent.Anim.SetTrigger("positive");
+        }
+        else
+        {
+            agent.Anim.SetTrigger("negative");
         }
     }
 
@@ -1092,22 +1109,39 @@ public class TheOneScript : MonoBehaviour
         agent.MoveToPosition(roomManager.CurrentRoom.IdlePoint.position);
         agent.SetState(new AIAgent.IdleState(agent));
         camText.text = "FEEDING ROOM";
+        agent.Anim.SetTrigger("birth");
     }
 
-    public void ShootFood()
+    public IEnumerator ShootFood()
     {
-        timer = 0;
-        foodCamera.gameObject.SetActive(false);
-        camText.gameObject.SetActive(true);
-        agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
+        float duration = 1f;
+        transitioning = true;
         if(Physics.Raycast(foodCamera.transform.position, foodCamera.transform.forward, out RaycastHit hit, 10f) == true)
         {
-            if (hit.collider.CompareTag("Player") == true) { manyHead.Feed(); } else { manyHead.Feed(true); }
+            if (hit.collider.CompareTag("Player") == true) 
+            { 
+                manyHead.Feed(); 
+                agent.Anim.SetTrigger("eat");
+                duration = 2f;
+            } 
+            else 
+            { 
+                manyHead.Feed(true); 
+                agent.Anim.SetTrigger("negative"); 
+            }
         }
         else
         {
+            agent.Anim.SetTrigger("negative");
             manyHead.Feed(true);
         }
+        yield return new WaitForSeconds(duration);
+        transitioning = false;
+        foodTimer = 0;
+        foodCamera.gameObject.SetActive(false);
+        camText.gameObject.SetActive(true);
+        audioSource.PlayOneShot(camerSwapClip);
+        agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
     }
 }
 
@@ -1280,6 +1314,7 @@ public class AIAgent
     private FiniteStateMachine stateMachine;
 
     public bool Busy { get; private set; } = false;
+    public Animator Anim { get { return animator; } }
 
     public abstract class AIState : FiniteStateMachine.IState
     {
@@ -1338,7 +1373,7 @@ public class AIAgent
         {
             Instance.Busy = false;
             Instance.agent.isStopped = true;
-            Debug.Log("Dead");
+            Instance.animator.SetTrigger("dead");
         }
     }
 
