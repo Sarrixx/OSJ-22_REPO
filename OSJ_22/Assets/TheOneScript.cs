@@ -440,6 +440,7 @@ public class TheOneScript : MonoBehaviour
 
     public delegate void ResetDelegate();
 
+    [SerializeField] private AudioClip camerSwapClip;
     [SerializeField] private Camera foodCamera;
     [SerializeField] private Transform feedPoint;
     [SerializeField] private float feedCooldown;
@@ -455,6 +456,7 @@ public class TheOneScript : MonoBehaviour
 
     private Vector3 currentDir = Vector3.right;
     private float timer = -1;
+    private AudioSource audioSource;
 
     public static event ResetDelegate ResetEvent;
 
@@ -463,6 +465,7 @@ public class TheOneScript : MonoBehaviour
     public void Awake()
     {
         Instance = this;
+        TryGetComponent(out audioSource);
         ResetEvent = delegate
         {
             bodyMesh.gameObject.SetActive(false);
@@ -516,6 +519,7 @@ public class TheOneScript : MonoBehaviour
                 else if (Input.GetButtonDown("Cancel") == true)
                 {
                     foodCamera.gameObject.SetActive(false);
+                    audioSource.PlayOneShot(camerSwapClip);
                     agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
                 }
             }
@@ -535,6 +539,7 @@ public class TheOneScript : MonoBehaviour
                         if (roomManager.ActivateRoom(0) == true)
                         {
                             agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
+                            audioSource.PlayOneShot(camerSwapClip);
                         }
                     }
                     else if (Input.GetKeyDown(KeyCode.Alpha2) == true)
@@ -542,6 +547,7 @@ public class TheOneScript : MonoBehaviour
                         if (roomManager.ActivateRoom(1) == true)
                         {
                             agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
+                            audioSource.PlayOneShot(camerSwapClip);
                         }
                     }
                     else if (Input.GetKeyDown(KeyCode.Alpha3) == true)
@@ -549,6 +555,7 @@ public class TheOneScript : MonoBehaviour
                         if (roomManager.ActivateRoom(2) == true)
                         {
                             agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
+                            audioSource.PlayOneShot(camerSwapClip);
                         }
                     }
                     else if (Input.GetKeyDown(KeyCode.Alpha4) == true)
@@ -556,6 +563,7 @@ public class TheOneScript : MonoBehaviour
                         if (roomManager.ActivateRoom(3) == true)
                         {
                             agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
+                            audioSource.PlayOneShot(camerSwapClip);
                         }
                     }
                     else if(Input.GetButtonDown("Submit") == true)
@@ -566,6 +574,7 @@ public class TheOneScript : MonoBehaviour
                     else if (timer == -1 && Input.GetButtonDown("Fire1") == true)
                     {
                         foodCamera.gameObject.SetActive(true);
+                        audioSource.PlayOneShot(camerSwapClip);
                         agent.SetState(new AIAgent.MoveState(agent, feedPoint.position));
                     }
                 }
