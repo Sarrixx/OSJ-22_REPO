@@ -176,24 +176,41 @@ public class TheOneScript : MonoBehaviour
         [System.Serializable]
         public class ShelfTest : ManyHeadTest
         {
-            
-            [SerializeField] Transform[] objPlaceLocations; //Where the player places the objects
-            [SerializeField] Transform[] objSpawnLocations; //Where the objects orginally spawn.
-            [SerializeField] GameObject[] objPrefabs;
-            [SerializeField] Image[] tvScreenLocations;
-            [SerializeField] Sprite[] objSprites;
+            private enum ActivityState { show, guess, cooldown };
 
+            [SerializeField] private Transform[] objPlaceLocations; //Where the player places the objects
+            [SerializeField] private Collider[] moveableObjects; //Where the objects orginally spawn.
+            [SerializeField] private Transform[] objOriginalPos; //Where the objects orginally spawn.
+            [SerializeField] private Image[] tvScreenLocations;
+            [SerializeField] private Sprite[] objSprites;
+            [SerializeField] private float viewTime = 2f;
+            [SerializeField] private float guessTime = 5f;
+            [SerializeField] private float coolDownTime = 2f;
+            [SerializeField] private Camera roomCamera; //Change with player
+
+            private GameObject currentSelectedObj;
+            private GameObject currentTarget;
+            private int[] correctOrder; //Set on start
+            private int[] currentOrder; //Change with player
+            private ActivityState state = ActivityState.show;
             private float currentTime = 0;
             private float timer = -1;
-            
-            public ShelfTest(ShelfTest test) : base(test)
-            {
-                objSpawnLocations = test.objSpawnLocations;
-            }
-            
 
             public event ModifyIntelligence ModifyIntelligenceEvent;
 
+            public ShelfTest(ShelfTest test) : base(test)
+            {
+                objPlaceLocations = test.objPlaceLocations;
+                moveableObjects = test.moveableObjects; 
+                tvScreenLocations = test.tvScreenLocations;
+                objSprites = test.objSprites;
+                state = test.state;
+                roomCamera = test.roomCamera;
+                viewTime = test.viewTime;
+                guessTime = test.guessTime;
+                coolDownTime = test.coolDownTime;
+            }
+            
             public void Awake()
             {
                 
@@ -203,8 +220,10 @@ public class TheOneScript : MonoBehaviour
             {
                 base.Initialise(modifyMethod);
                 timer = 0;
-                currentTime = Random.Range(1, 5);
+                currentTime = viewTime;
                 ModifyIntelligenceEvent = new ModifyIntelligence(modifyMethod);
+                ChangeActivityState(ActivityState.show);
+                ShowOrder();
             }
 
             public override void Update()
@@ -215,9 +234,91 @@ public class TheOneScript : MonoBehaviour
                     if (timer >= currentTime)
                     {
                         timer = 0;
-                        
+                        if(state == ActivityState.show)
+                        {
+                            ChangeActivityState(ActivityState.guess);
+                        }
+                        else if (state == ActivityState.guess)
+                        {
+                            //Timer ran out and failed
+                            ShowOrder();
+                            ModifyIntelligenceEvent.Invoke(-20);
+                            ChangeActivityState(ActivityState.cooldown);
+                        }
+                        else if (state == ActivityState.cooldown)
+                        {
+                            ChangeActivityState(ActivityState.show);
+                        }
                     }
-                   
+
+                    //Raycast
+                    if(currentSelectedObj != null)
+                    {
+                        if (Input.GetButtonUp("Fire1"))
+                        {
+                            if(currentTarget != null)
+                            {
+                                if (CheckCurrentObject())
+                                {
+                                    //Correct
+                                    currentSelectedObj.transform.position = currentTarget.transform.position;
+                                    currentSelectedObj.GetComponent<Collider>().enabled = false;
+                                    currentTarget.GetComponent<Collider>().enabled = false;
+                                    currentSelectedObj = null;
+                                    ModifyIntelligenceEvent.Invoke(20);
+                                }
+                                else
+                                {
+                                    //Incorrect
+                                    ModifyIntelligenceEvent.Invoke(-20);
+                                    //reset Pos
+                                    currentSelectedObj.transform.localPosition = Vector3.zero;
+                                    currentSelectedObj = null;
+                                }
+                            }
+                            else
+                            {
+                                //Deselect
+                                currentSelectedObj.transform.localPosition = Vector3.zero;
+                                currentSelectedObj = null;
+                            }
+                        }
+                        //Held
+                        if (Input.GetButton("Fire1"))
+                        {
+                            currentSelectedObj.transform.position = roomCamera.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, -roomCamera.transform.position.z));
+
+                            //raycast for target
+                            RaycastHit hit;
+                            Ray ray = roomCamera.ScreenPointToRay(Input.mousePosition);
+                            if (Physics.Raycast(ray, out hit, 20f, LayerMask.GetMask("Target")))
+                            {
+                                //Set target
+                                currentTarget = hit.transform.gameObject;
+                            }
+                            else
+                            {
+                                //Remove target
+                                currentTarget = null;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        RaycastHit hit;
+                        Ray ray = roomCamera.ScreenPointToRay(Input.mousePosition);
+                        if (Physics.Raycast(ray, out hit, 20f, LayerMask.GetMask("Selectable")))
+                        {
+                            Transform objectHit = hit.transform;
+                            if (Input.GetButtonDown("Fire1"))
+                            {
+                                //Select
+                                currentSelectedObj = objectHit.gameObject;
+
+                            }
+                            // Do something with the object that was hit by the raycast.
+                        }
+                    }
                 }
                 else
                 {
@@ -226,10 +327,129 @@ public class TheOneScript : MonoBehaviour
             }
 
 
+
+            public void ShowOrder()
+            {
+                Random.InitState((int)System.DateTime.Now.Ticks);
+                correctOrder = new int[objPlaceLocations.Length];
+                currentOrder = new int[objPlaceLocations.Length];
+                
+                List<int> placementIndexs = new List<int>(){};
+                
+                    //create list 1-length
+                for (int i = 0; i < correctOrder.Length; i++)
+                {
+                    placementIndexs.Add(i);
+                    currentOrder[i] = -1;
+                    
+                }
+                //Random Order for in correctOrder
+                for (int i = 0; i < correctOrder.Length; i++)
+                {
+                    
+                    int randomInd = Random.Range(0, placementIndexs.Count);
+                    int correctInd = placementIndexs[randomInd];
+                    placementIndexs.RemoveAt(randomInd);
+                    tvScreenLocations[i].sprite = objSprites[correctInd];
+                    correctOrder[i] = correctInd;
+                }
+                //randomize 
+            }
+
+            public void HideOrder()
+            {
+                foreach (Image item in tvScreenLocations)
+                {
+                    item.sprite = null;
+                }
+            }
+
+            public bool CheckCurrentObject()
+            {
+
+                //Get ind of current object
+                //get ind of target obj
+                //correctOrder[targetind] == currentObjInd
+                int targetInd = -1;
+                int selectedObjInd = -1;
+                for (int i = 0; i < objPlaceLocations.Length; i++)
+                {
+                    if (objPlaceLocations[i] == currentTarget.transform)
+                        targetInd = i;
+                }
+                for (int i = 0; i < moveableObjects.Length; i++)
+                {
+                    if (moveableObjects[i] == currentSelectedObj)
+                        selectedObjInd = i;
+                }
+                if (correctOrder[targetInd] == selectedObjInd)
+                {
+                    currentOrder[targetInd] = selectedObjInd;
+                    return true;
+                }
+                    
+                return false;
+            }
+
+            public void ResetActivity()
+            {
+                //Reset
+                currentSelectedObj = null;
+                foreach (Collider item in moveableObjects)
+                {
+                    item.transform.localPosition = Vector3.zero;
+                    item.enabled = true;
+                }
+                foreach (Transform item in objPlaceLocations)
+                {
+                    item.GetComponent<Collider>().enabled = true;
+                }
+                HideOrder();
+
+            }
+
+            void ChangeActivityState(ActivityState newState)
+            {
+                state = newState;
+                if (newState == ActivityState.show)
+                {
+                    currentTime = viewTime;
+                    ShowOrder();
+                    foreach (Collider item in moveableObjects)
+                    {
+                        item.enabled = false;
+                    }
+                }
+
+                if (newState == ActivityState.guess)
+                {
+                    currentTime = guessTime;
+                    foreach (Collider item in moveableObjects)
+                    {
+                        item.enabled = true;
+                    }
+                    HideOrder();
+                }
+
+                if (newState == ActivityState.cooldown)
+                {
+                    currentTime = coolDownTime;
+                    foreach (Collider item in moveableObjects)
+                    {
+                        item.enabled = false;
+                    }
+                    ResetActivity();
+                    HideOrder();
+                }
+            }
+
             public override void Exit()
             {
                 base.Exit();
                 ModifyIntelligenceEvent = null;
+                ResetActivity();
+
+                
             }
         }
 
@@ -245,7 +465,9 @@ public class TheOneScript : MonoBehaviour
             ResetEvent += delegate { ActivateRoom(0); };
             lightTest = new LightTest(lightTest);
             lightTest.Awake();
-            for(int i = 0; i < rooms.Length; i++)
+            shelfTest = new ShelfTest(shelfTest);
+            shelfTest.Awake();
+            for (int i = 0; i < rooms.Length; i++)
             {
                 switch (i)
                 {
@@ -253,7 +475,7 @@ public class TheOneScript : MonoBehaviour
                         rooms[i] = new Room(rooms[i], lightTest);
                         break;
                     case 2:
-                        //rooms[i] = new Room(rooms[i], shelfTest);
+                        rooms[i] = new Room(rooms[i], shelfTest);
                         break;
                     case 3:
                         //rooms[i] = new Room(rooms[i], lightTest);
@@ -440,9 +662,14 @@ public class TheOneScript : MonoBehaviour
 
     public delegate void ResetDelegate();
 
+    [SerializeField] private AudioClip camerSwapClip;
     [SerializeField] private Camera foodCamera;
+    [SerializeField] private float foodCameraSpeed = 30f;
+    [SerializeField] private float rotationAngle = 90f;
+    [SerializeField] private float startingAngle = 45f;
     [SerializeField] private Transform feedPoint;
     [SerializeField] private float feedCooldown;
+    [SerializeField] private float roomTransitionDelay = 1f;
     [SerializeField] private RoomManager roomManager;
     [SerializeField] private ManyHeadSelection selectionMenu;
     [Header("Many Head/Agent")]
@@ -453,8 +680,9 @@ public class TheOneScript : MonoBehaviour
     [SerializeField] private SkinnedMeshRenderer bodyMesh;
     [SerializeField] private Transform headObject;
 
-    private Vector3 currentDir = Vector3.right;
     private float timer = -1;
+    private AudioSource audioSource;
+    private bool transitioning = false;
 
     public static event ResetDelegate ResetEvent;
 
@@ -463,6 +691,7 @@ public class TheOneScript : MonoBehaviour
     public void Awake()
     {
         Instance = this;
+        TryGetComponent(out audioSource);
         ResetEvent = delegate
         {
             bodyMesh.gameObject.SetActive(false);
@@ -498,16 +727,7 @@ public class TheOneScript : MonoBehaviour
             agent.Update();
             if (foodCamera.gameObject.activeSelf == true)
             {
-                Vector3 relativeDir = foodCamera.transform.InverseTransformDirection(currentDir);
-                if (Vector3.Angle(foodCamera.transform.forward, relativeDir) > 45f)
-                {
-                    Vector3 step = Vector3.RotateTowards(foodCamera.transform.forward, relativeDir, 0.5f * Time.deltaTime, 0.0f);
-                    foodCamera.transform.forward = step;
-                }
-                else
-                {
-                    currentDir = -currentDir;
-                }
+                foodCamera.transform.localEulerAngles = new Vector3(45, Mathf.PingPong(Time.time * foodCameraSpeed, rotationAngle) - startingAngle, 0);
 
                 if (Input.GetButtonDown("Fire1") == true)
                 {
@@ -516,6 +736,7 @@ public class TheOneScript : MonoBehaviour
                 else if (Input.GetButtonDown("Cancel") == true)
                 {
                     foodCamera.gameObject.SetActive(false);
+                    audioSource.PlayOneShot(camerSwapClip);
                     agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
                 }
             }
@@ -528,35 +749,23 @@ public class TheOneScript : MonoBehaviour
                         roomManager.CurrentRoom.RoomTest.Exit();
                     }
                 }
-                else
+                else if(transitioning == false)
                 {
                     if (Input.GetKeyDown(KeyCode.Alpha1) == true)
                     {
-                        if (roomManager.ActivateRoom(0) == true)
-                        {
-                            agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
-                        }
+                        StartCoroutine(RoomTransition(1));
                     }
                     else if (Input.GetKeyDown(KeyCode.Alpha2) == true)
                     {
-                        if (roomManager.ActivateRoom(1) == true)
-                        {
-                            agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
-                        }
+                        StartCoroutine(RoomTransition(2));
                     }
                     else if (Input.GetKeyDown(KeyCode.Alpha3) == true)
                     {
-                        if (roomManager.ActivateRoom(2) == true)
-                        {
-                            agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
-                        }
+                        StartCoroutine(RoomTransition(3));
                     }
                     else if (Input.GetKeyDown(KeyCode.Alpha4) == true)
                     {
-                        if (roomManager.ActivateRoom(3) == true)
-                        {
-                            agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
-                        }
+                        StartCoroutine(RoomTransition(4));
                     }
                     else if(Input.GetButtonDown("Submit") == true)
                     {
@@ -566,6 +775,7 @@ public class TheOneScript : MonoBehaviour
                     else if (timer == -1 && Input.GetButtonDown("Fire1") == true)
                     {
                         foodCamera.gameObject.SetActive(true);
+                        audioSource.PlayOneShot(camerSwapClip);
                         agent.SetState(new AIAgent.MoveState(agent, feedPoint.position));
                     }
                 }
@@ -579,6 +789,19 @@ public class TheOneScript : MonoBehaviour
             {
                 timer = -1;
             }
+        }
+    }
+
+    IEnumerator RoomTransition(int roomIndex)
+    {
+        if (roomManager.ActivateRoom(roomIndex) == true)
+        {
+            //audioSource.PlayOneShot(); play random transition SFX for current room
+            audioSource.PlayOneShot(camerSwapClip);
+            transitioning = true;
+            yield return new WaitForSeconds(roomTransitionDelay);
+            transitioning = false;
+            agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
         }
     }
 
@@ -783,6 +1006,7 @@ public class ManyHeadSelection
 public class AIAgent
 {
     [SerializeField] private NavMeshAgent agent;
+    [SerializeField] private Animator animator;
 
     private FiniteStateMachine stateMachine;
 
@@ -820,6 +1044,7 @@ public class AIAgent
         {
             Instance.Busy = false;
             Instance.agent.isStopped = true;
+            Instance.animator.SetBool("moving", false);
             //Debug.Log("Set state to idle");
         }
 
@@ -864,6 +1089,7 @@ public class AIAgent
                 targetPosition = point.position;
                 Instance.agent.SetDestination(targetPosition);
                 Instance.Busy = true;
+                Instance.animator.SetBool("moving", true);
             }
             else
             {
