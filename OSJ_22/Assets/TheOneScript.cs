@@ -493,7 +493,6 @@ public class TheOneScript : MonoBehaviour
     [SerializeField] private AIAgent agent;
     [SerializeField] private Material maleMaterial;
     [SerializeField] private Material femaleMaterial;
-    [SerializeField] private MeshRenderer bodyMesh;
     [SerializeField] private SkinnedMeshRenderer bodyMesh;
     [SerializeField] private Transform headObject;
 
