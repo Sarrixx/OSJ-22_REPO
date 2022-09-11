@@ -81,6 +81,8 @@ public class TheOneScript : MonoBehaviour
             private float currentTime = 0;
             private float timer = -1;
 
+            public event ModifyIntelligence ModifyIntelligenceEvent;
+
             public LightTest(LightTest test) : base(test)
             {
                 greenLight = test.greenLight;
@@ -98,8 +100,6 @@ public class TheOneScript : MonoBehaviour
                 greenButtonMat = test.greenButtonMat;
                 buttonMesh = test.buttonMesh;
             }
-
-            public event ModifyIntelligence ModifyIntelligenceEvent;
 
             public void Awake()
             {
@@ -494,9 +494,144 @@ public class TheOneScript : MonoBehaviour
             }
         }
 
+        [System.Serializable]
+        public class GridTest : ManyHeadTest
+        {
+            [SerializeField] private MeshRenderer[] cells;
+            [SerializeField] private Material defaultMat, activeMat;
+            [SerializeField] private float activeTime, turnTime;
+
+            private int maxSteps = 3;
+            private int currentStep = 0;
+            private int[] currentSequence;
+            private float timer = -1;
+            private bool playerTurn = false;
+
+            public event ModifyIntelligence ModifyIntelligenceEvent;
+
+            public GridTest(GridTest test) : base(test)
+            {
+                cells = test.cells;
+                defaultMat = test.defaultMat;
+                activeMat = test.activeMat;
+                activeTime = test.activeTime;
+                turnTime = test.turnTime;
+            }
+
+            public void Awake()
+            {
+
+            }
+
+            public override void Initialise(ModifyIntelligence modifyMethod)
+            {
+                if (cooldownTimer < 0)
+                {
+                    maxSteps = 3;
+                    GetNewSequence();
+                    playerTurn = false;
+                    HighlightTile(currentSequence[0]);
+                    timer = 0;
+                }
+            }
+
+            public override void Update()
+            {
+                if(Active == true) 
+                {
+                    if(playerTurn == false)
+                    {
+                        if (timer >= 0)
+                        {
+                            timer += Time.deltaTime;
+                            if (timer >= activeTime)
+                            {
+                                if (currentStep < maxSteps)
+                                {
+                                    currentStep++;
+                                    timer = 0;
+                                    HighlightTile(currentSequence[currentStep]);
+                                }
+                                else
+                                {
+                                    playerTurn = true;
+                                    currentStep = 0;
+                                    timer = -1;
+                                    ClearBoard();
+                                }
+                            }
+                        }
+                    }
+                    else
+                    {
+                        if (timer >= 0)
+                        {
+                            timer += Time.deltaTime;
+
+                            //if player clicks on correct tile for current sequence step
+                            //else
+
+                            if(timer >= turnTime)
+                            {
+                                playerTurn = false;
+                                timer = 0;
+                                ClearBoard();
+                            }
+                        }
+                    }
+                }
+                else 
+                {
+                    base.Update();
+                }
+            }
+
+            public override void Exit()
+            {
+                base.Exit();
+                currentStep = 0;
+                ClearBoard();
+                timer = -1;
+            }
+
+            private void HighlightTile(int index)
+            {
+                for (int i = 0; i < cells.Length; i++)
+                {
+                    if (i == index)
+                    {
+                        cells[i].material = activeMat;
+                    }
+                    else
+                    {
+                        cells[i].material = defaultMat;
+                    }
+                }
+            }
+
+            private void ClearBoard()
+            {
+                foreach(MeshRenderer cell in cells)
+                {
+                    cell.material = defaultMat;
+                }
+            }
+
+            private void GetNewSequence()
+            {
+                currentSequence = new int[maxSteps];
+                for (int i = 0; i < maxSteps; i++)
+                {
+                    int r = Random.Range(0, cells.Length);
+                    currentSequence[i] = r;
+                }
+            }
+        }
+
         [SerializeField] private Room[] rooms;
         [SerializeField] private LightTest lightTest;
         [SerializeField] private ShelfTest shelfTest;
+        [SerializeField] private GridTest gridTest;
 
         public int CurrentRoomIndex { get; private set; } = -1;
         public Room CurrentRoom { get { return rooms[CurrentRoomIndex]; } }
@@ -508,6 +643,8 @@ public class TheOneScript : MonoBehaviour
             lightTest.Awake();
             shelfTest = new ShelfTest(shelfTest);
             shelfTest.Awake();
+            gridTest = new GridTest(gridTest);
+            gridTest.Awake();
             for (int i = 0; i < rooms.Length; i++)
             {
                 switch (i)
@@ -519,7 +656,7 @@ public class TheOneScript : MonoBehaviour
                         rooms[i] = new Room(rooms[i], shelfTest);
                         break;
                     case 3:
-                        //rooms[i] = new Room(rooms[i], lightTest);
+                        rooms[i] = new Room(rooms[i], gridTest);
                         break;
                 }
             }
