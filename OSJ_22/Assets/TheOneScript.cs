@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.UI;
@@ -498,14 +499,15 @@ public class TheOneScript : MonoBehaviour
         public class GridTest : ManyHeadTest
         {
             [SerializeField] private MeshRenderer[] cells;
-            [SerializeField] private Material defaultMat, activeMat;
-            [SerializeField] private float activeTime, turnTime;
+            [SerializeField] private Material defaultMat, activeMat, correctMat;
+            [SerializeField] private float activeTime = 1, turnTime = 3, intervalTime = 1;
 
             private int maxSteps = 3;
             private int currentStep = 0;
             private int[] currentSequence;
             private float timer = -1;
             private bool playerTurn = false;
+            private bool interval = false;
 
             public event ModifyIntelligence ModifyIntelligenceEvent;
 
@@ -514,24 +516,22 @@ public class TheOneScript : MonoBehaviour
                 cells = test.cells;
                 defaultMat = test.defaultMat;
                 activeMat = test.activeMat;
+                correctMat = test.correctMat;
                 activeTime = test.activeTime;
                 turnTime = test.turnTime;
-            }
-
-            public void Awake()
-            {
-
+                interval = test.interval;
             }
 
             public override void Initialise(ModifyIntelligence modifyMethod)
             {
                 if (cooldownTimer < 0)
                 {
+                    base.Initialise(modifyMethod);
                     maxSteps = 3;
                     GetNewSequence();
-                    playerTurn = false;
-                    HighlightTile(currentSequence[0]);
+                    HighlightTile(currentSequence[0], activeMat);
                     timer = 0;
+                    ModifyIntelligenceEvent = new ModifyIntelligence(modifyMethod);
                 }
             }
 
@@ -544,21 +544,30 @@ public class TheOneScript : MonoBehaviour
                         if (timer >= 0)
                         {
                             timer += Time.deltaTime;
-                            if (timer >= activeTime)
+                            if(interval == true)
                             {
-                                if (currentStep < maxSteps)
+                                if(timer >= 1)
+                                {
+                                    timer = 0;
+                                    interval = false;
+                                    HighlightTile(currentSequence[currentStep], activeMat);
+                                }
+                            }
+                            else if (timer >= activeTime)
+                            {
+                                if (currentStep + 1 < maxSteps)
                                 {
                                     currentStep++;
-                                    timer = 0;
-                                    HighlightTile(currentSequence[currentStep]);
+                                    ClearBoard();
+                                    interval = true;
                                 }
                                 else
                                 {
                                     playerTurn = true;
                                     currentStep = 0;
-                                    timer = -1;
                                     ClearBoard();
                                 }
+                                timer = 0;
                             }
                         }
                     }
@@ -567,15 +576,71 @@ public class TheOneScript : MonoBehaviour
                         if (timer >= 0)
                         {
                             timer += Time.deltaTime;
+                            if (interval == true)
+                            {
+                                if (timer >= 1)
+                                {
+                                    timer = 0;
+                                    interval = false;
+                                    ClearBoard();
+                                    if (currentStep + 1 < maxSteps)
+                                    {
+                                        currentStep++;
+                                    }
+                                    else
+                                    {
+                                        maxSteps++;
+                                        playerTurn = false;
+                                        currentStep = 0;
+                                        GetNewSequence(true);
+                                        HighlightTile(currentSequence[currentStep], activeMat);
+                                    }
+                                }
+                            }
+                            else if (Input.GetKeyDown(KeyCode.Alpha1) == true) 
+                            {
+                                CheckTile(0);
+                            }
+                            else if(Input.GetKeyDown(KeyCode.Alpha2) == true)
+                            {
+                                CheckTile(1);
+                            }
+                            else if (Input.GetKeyDown(KeyCode.Alpha3) == true)
+                            {
+                                CheckTile(2);
+                            }
+                            else if (Input.GetKeyDown(KeyCode.Alpha4) == true)
+                            {
+                                CheckTile(3);
+                            }
+                            else if (Input.GetKeyDown(KeyCode.Alpha5) == true)
+                            {
+                                CheckTile(4);
+                            }
+                            else if (Input.GetKeyDown(KeyCode.Alpha6) == true)
+                            {
+                                CheckTile(5);
+                            }
+                            else if (Input.GetKeyDown(KeyCode.Alpha7) == true)
+                            {
+                                CheckTile(6);
+                            }
+                            else if (Input.GetKeyDown(KeyCode.Alpha8) == true)
+                            {
+                                CheckTile(7);
+                            }
+                            else if (Input.GetKeyDown(KeyCode.Alpha9) == true)
+                            {
+                                CheckTile(8);
+                            }
 
-                            //if player clicks on correct tile for current sequence step
-                            //else
-
-                            if(timer >= turnTime)
+                            if (timer >= turnTime)
                             {
                                 playerTurn = false;
                                 timer = 0;
-                                ClearBoard();
+                                currentStep = 0;
+                                GetNewSequence();
+                                HighlightTile(currentSequence[currentStep], activeMat);
                             }
                         }
                     }
@@ -592,19 +657,44 @@ public class TheOneScript : MonoBehaviour
                 currentStep = 0;
                 ClearBoard();
                 timer = -1;
+                playerTurn = false;
+                interval = false;
+                ModifyIntelligenceEvent = null;
             }
 
-            private void HighlightTile(int index)
+            private void CheckTile(int value)
+            {
+                timer = 0;
+                if (currentSequence[currentStep] == value)
+                {
+                    interval = true;
+                    HighlightTile(currentSequence[currentStep], correctMat);
+                    ModifyIntelligenceEvent.Invoke(20);
+                    //positive response
+                }
+                else
+                {
+                    playerTurn = false;
+                    maxSteps = 3;
+                    currentStep = 0;
+                    GetNewSequence();
+                    HighlightTile(currentSequence[currentStep], activeMat);
+                    ModifyIntelligenceEvent.Invoke(-20);
+                    //negative response
+                }
+            }
+
+            private void HighlightTile(int index, Material mat)
             {
                 for (int i = 0; i < cells.Length; i++)
                 {
                     if (i == index)
                     {
-                        cells[i].material = activeMat;
+                        cells[i].materials = new Material[] { cells[i].materials[0], mat };
                     }
                     else
                     {
-                        cells[i].material = defaultMat;
+                        cells[i].materials = new Material[] { cells[i].materials[0], defaultMat };
                     }
                 }
             }
@@ -613,17 +703,37 @@ public class TheOneScript : MonoBehaviour
             {
                 foreach(MeshRenderer cell in cells)
                 {
-                    cell.material = defaultMat;
+                    cell.materials = new Material[] { cell.materials[0], defaultMat };
                 }
             }
 
-            private void GetNewSequence()
+            private void GetNewSequence(bool append = false)
             {
-                currentSequence = new int[maxSteps];
-                for (int i = 0; i < maxSteps; i++)
+                if (append == false)
                 {
-                    int r = Random.Range(0, cells.Length);
-                    currentSequence[i] = r;
+                    currentSequence = new int[maxSteps];
+                    for (int i = 0; i < maxSteps; i++)
+                    {
+                        int r = Random.Range(0, cells.Length);
+                        currentSequence[i] = r;
+                    }
+                }
+                else
+                {
+                    int[] newSequence = new int[maxSteps];
+                    for(int i = 0; i < maxSteps; i++)
+                    {
+                        if(i == maxSteps - 1)
+                        {
+                            int r = Random.Range(0, cells.Length);
+                            newSequence[i] = r;
+                        }
+                        else
+                        {
+                            newSequence[i] = currentSequence[i];
+                        }
+                    }
+                    currentSequence = newSequence;
                 }
             }
         }
@@ -644,7 +754,6 @@ public class TheOneScript : MonoBehaviour
             shelfTest = new ShelfTest(shelfTest);
             shelfTest.Awake();
             gridTest = new GridTest(gridTest);
-            gridTest.Awake();
             for (int i = 0; i < rooms.Length; i++)
             {
                 switch (i)
@@ -718,6 +827,7 @@ public class TheOneScript : MonoBehaviour
         [SerializeField] private float hungerDepleteRatio = 1;
 
         private float currentHunger = 1;
+        [SerializeField]
         private float currentIntelligence = 0;
         private int age = 0;
         private float ageTimer = 0;

@@ -7,12 +7,12 @@ Material:
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
-  m_Name: mat_button-green
+  m_Name: mat_green-emmisive
   m_Shader: {fileID: 46, guid: 0000000000000000f000000000000000, type: 0}
   m_ValidKeywords:
   - _EMISSION
   m_InvalidKeywords: []
-  m_LightmapFlags: 2
+  m_LightmapFlags: 1
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
   m_CustomRenderQueue: -1
@@ -76,6 +76,6 @@ Material:
     - _UVSec: 0
     - _ZWrite: 1
     m_Colors:
-    - _Color: {r: 0.15187064, g: 1, b: 0.08962262, a: 1}
-    - _EmissionColor: {r: 0.22183743, g: 2.1185474, b: 0, a: 1}
+    - _Color: {r: 0.068376064, g: 1, b: 0, a: 1}
+    - _EmissionColor: {r: 0, g: 2, b: 0.101960786, a: 1}
   m_BuildTextureStacks: []
