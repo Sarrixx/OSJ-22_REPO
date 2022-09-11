@@ -19,7 +19,7 @@ MonoBehaviour:
     width: 1920
     height: 997
   m_ShowMode: 4
-  m_Title: Game
+  m_Title: Scene
   m_RootView: {fileID: 2}
   m_MinSize: {x: 875, y: 300}
   m_MaxSize: {x: 10000, y: 10000}
@@ -120,7 +120,7 @@ MonoBehaviour:
   m_MinSize: {x: 300, y: 200}
   m_MaxSize: {x: 24288, y: 16192}
   vertical: 0
-  controlID: 3470
+  controlID: 28410
 --- !u!114 &6
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -145,7 +145,7 @@ MonoBehaviour:
   m_MinSize: {x: 100, y: 200}
   m_MaxSize: {x: 8096, y: 16192}
   vertical: 1
-  controlID: 3494
+  controlID: 28344
 --- !u!114 &7
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -223,7 +223,7 @@ MonoBehaviour:
   m_MinSize: {x: 100, y: 200}
   m_MaxSize: {x: 8096, y: 16192}
   vertical: 1
-  controlID: 3471
+  controlID: 28372
 --- !u!114 &10
 MonoBehaviour:
   m_ObjectHideFlags: 52
@@ -269,8 +269,8 @@ MonoBehaviour:
     y: 415
     width: 1180
     height: 532
-  m_MinSize: {x: 202, y: 221}
-  m_MaxSize: {x: 4002, y: 4021}
+  m_MinSize: {x: 200, y: 200}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 13}
   m_Panes:
   - {fileID: 13}
@@ -296,8 +296,8 @@ MonoBehaviour:
     y: 0
     width: 416
     height: 947
-  m_MinSize: {x: 276, y: 71}
-  m_MaxSize: {x: 4001, y: 4021}
+  m_MinSize: {x: 275, y: 50}
+  m_MaxSize: {x: 4000, y: 4000}
   m_ActualView: {fileID: 19}
   m_Panes:
   - {fileID: 19}
@@ -426,10 +426,10 @@ MonoBehaviour:
     m_SaveData: []
   m_SceneHierarchy:
     m_TreeViewState:
-      scrollPos: {x: 0, y: 0}
-      m_SelectedIDs: 645a0000
-      m_LastClickedID: 23140
-      m_ExpandedIDs: 32fbffff
+      scrollPos: {x: 0, y: 32}
+      m_SelectedIDs: 365f0000
+      m_LastClickedID: 24374
+      m_ExpandedIDs: 1aa4fdffaaeefdffb4a0ffffc0a0ffffcca0ffffd0a0ffffd4a0ffff10f5ffff18f5ffff06fbffffbc5e0000c45e0000f05e0000105f0000
       m_RenameOverlay:
         m_UserAcceptedRename: 0
         m_Name: 
@@ -494,21 +494,21 @@ MonoBehaviour:
     m_SkipHidden: 0
     m_SearchArea: 1
     m_Folders:
-    - Assets
+    - Assets/Sprites
     m_Globs: []
     m_OriginalText: 
   m_ViewMode: 0
   m_StartGridSize: 64
   m_LastFolders: []
   m_LastFoldersGridSize: -1
-  m_LastProjectPath: C:\Users\Josh\Desktop\OSJ-22_REPO\OSJ_22
+  m_LastProjectPath: C:\Users\Spacer\Documents\GitHub\OSJ-22_REPO\OSJ_22
   m_LockTracker:
     m_IsLocked: 0
   m_FolderTreeState:
     scrollPos: {x: 0, y: 0}
     m_SelectedIDs: 423a0000
     m_LastClickedID: 14914
-    m_ExpandedIDs: ffffffff00000000405b0000
+    m_ExpandedIDs: ffffffff00000000325d00000eb20000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -534,9 +534,9 @@ MonoBehaviour:
       m_ResourceFile: 
   m_AssetTreeState:
     scrollPos: {x: 0, y: 0}
-    m_SelectedIDs: 645a0000
+    m_SelectedIDs: 3ecdffff
     m_LastClickedID: 0
-    m_ExpandedIDs: ffffffff00000000405b0000
+    m_ExpandedIDs: ffffffff00000000325d00000eb20000
     m_RenameOverlay:
       m_UserAcceptedRename: 0
       m_Name: 
@@ -561,8 +561,8 @@ MonoBehaviour:
       m_Icon: {fileID: 0}
       m_ResourceFile: 
   m_ListAreaState:
-    m_SelectedInstanceIDs: 645a0000
-    m_LastClickedInstanceID: 23140
+    m_SelectedInstanceIDs: 3ecdffff
+    m_LastClickedInstanceID: -12994
     m_HadKeyboardFocusLastEvent: 0
     m_ExpandedInstanceIDs: 
     m_RenameOverlay:
@@ -838,16 +838,16 @@ MonoBehaviour:
   m_WindowGUID: 099b2c5ad06fca4418ba19616fd0b7c5
   m_Gizmos: 1
   m_OverrideSceneCullingMask: 6917529027641081856
-  m_SceneIsLit: 1
+  m_SceneIsLit: 0
   m_SceneLighting: 1
   m_2DMode: 0
   m_isRotationLocked: 0
   m_PlayAudio: 0
   m_AudioPlay: 0
   m_Position:
-    m_Target: {x: 11.030307, y: 1.3717937, z: 7.825614}
+    m_Target: {x: -25.619684, y: -6.622863, z: 2.9113722}
     speed: 2
-    m_Value: {x: 11.030307, y: 1.3717937, z: 7.825614}
+    m_Value: {x: -25.619684, y: -6.622863, z: 2.9113722}
   m_RenderMode: 0
   m_CameraMode:
     drawMode: 0
@@ -861,7 +861,7 @@ MonoBehaviour:
     showFog: 1
     showSkybox: 1
     showFlares: 1
-    showImageEffects: 1
+    showImageEffects: 0
     showParticleSystems: 1
     showVisualEffectGraphs: 1
     m_FxEnabled: 1
@@ -894,13 +894,13 @@ MonoBehaviour:
     m_GridAxis: 1
     m_gridOpacity: 0.5
   m_Rotation:
-    m_Target: {x: -0.3372784, y: 0.07950875, z: -0.028601151, w: -0.9376074}
+    m_Target: {x: 0.15868632, y: -0.62948924, z: 0.13338462, w: 0.7488655}
     speed: 2
-    m_Value: {x: -0.3372777, y: 0.07950859, z: -0.028601093, w: -0.9376055}
+    m_Value: {x: 0.1598071, y: -0.62927926, z: 0.13432679, w: 0.74861574}
   m_Size:
-    m_Target: 13.493146
+    m_Target: 10.360336
     speed: 2
-    m_Value: 13.493146
+    m_Value: 10.360336
   m_Ortho:
     m_Target: 0
     speed: 2
@@ -955,7 +955,7 @@ MonoBehaviour:
     m_SaveData: []
   m_LockTracker:
     m_IsLocked: 0
-  m_LastSelectedObjectID: 23140
+  m_LastSelectedObjectID: 24374
 --- !u!114 &19
 MonoBehaviour:
   m_ObjectHideFlags: 52
