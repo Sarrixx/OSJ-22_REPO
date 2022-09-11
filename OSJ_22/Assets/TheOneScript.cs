@@ -783,6 +783,7 @@ public class ManyHeadSelection
 public class AIAgent
 {
     [SerializeField] private NavMeshAgent agent;
+    [SerializeField] private Animator animator;
 
     private FiniteStateMachine stateMachine;
 
@@ -820,6 +821,7 @@ public class AIAgent
         {
             Instance.Busy = false;
             Instance.agent.isStopped = true;
+            Instance.animator.SetBool("moving", false);
             //Debug.Log("Set state to idle");
         }
 
@@ -864,6 +866,7 @@ public class AIAgent
                 targetPosition = point.position;
                 Instance.agent.SetDestination(targetPosition);
                 Instance.Busy = true;
+                Instance.animator.SetBool("moving", true);
             }
             else
             {
