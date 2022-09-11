@@ -73,6 +73,8 @@ public class TheOneScript : MonoBehaviour
         public class LightTest : ManyHeadTest
         {
             [SerializeField] private Light greenLight, redLight;
+            [Range(1, 5)] [SerializeField] private float minTime = 1, maxTime = 5;
+            [Range(10, 100)] [SerializeField] private float greenChance = 50;
 
             private float currentTime = 0;
             private float timer = -1;
@@ -81,6 +83,9 @@ public class TheOneScript : MonoBehaviour
             {
                 greenLight = test.greenLight;
                 redLight = test.redLight;
+                minTime = test.minTime;
+                maxTime = test.maxTime;
+                greenChance = test.greenChance;
             }
 
             public event ModifyIntelligence ModifyIntelligenceEvent;
@@ -93,12 +98,15 @@ public class TheOneScript : MonoBehaviour
 
             public override void Initialise(ModifyIntelligence modifyMethod)
             {
-                base.Initialise(modifyMethod);
-                greenLight.enabled = false;
-                redLight.enabled = false;
-                timer = 0;
-                currentTime = Random.Range(1, 5);
-                ModifyIntelligenceEvent = new ModifyIntelligence(modifyMethod);
+                if (cooldownTimer < 0)
+                {
+                    base.Initialise(modifyMethod);
+                    greenLight.enabled = false;
+                    redLight.enabled = true;
+                    timer = 0;
+                    currentTime = Random.Range(minTime, maxTime);
+                    ModifyIntelligenceEvent = new ModifyIntelligence(modifyMethod);
+                }
             }
 
             public override void Update()
@@ -108,6 +116,12 @@ public class TheOneScript : MonoBehaviour
                     timer += Time.deltaTime;
                     if (timer >= currentTime)
                     {
+                        if (greenLight.enabled == true)
+                        {
+                            Debug.Log("Missed target");
+                            ModifyIntelligenceEvent.Invoke(-20);
+                        }
+                        currentTime = Random.Range(minTime, maxTime);
                         timer = 0;
                         ToggleLight();
                     }
@@ -136,7 +150,7 @@ public class TheOneScript : MonoBehaviour
             private void ToggleLight()
             {
                 int r = Random.Range(0, 100);
-                if (r < 20)
+                if (r < greenChance)
                 {
                     Debug.Log("Green light");
                     greenLight.enabled = true;
@@ -168,9 +182,6 @@ public class TheOneScript : MonoBehaviour
             [SerializeField] GameObject[] objPrefabs;
             [SerializeField] Image[] tvScreenLocations;
             [SerializeField] Sprite[] objSprites;
-
-
-
 
             private float currentTime = 0;
             private float timer = -1;
@@ -222,10 +233,9 @@ public class TheOneScript : MonoBehaviour
             }
         }
 
-
-
         [SerializeField] private Room[] rooms;
         [SerializeField] private LightTest lightTest;
+        [SerializeField] private ShelfTest shelfTest;
 
         public int CurrentRoomIndex { get; private set; } = -1;
         public Room CurrentRoom { get { return rooms[CurrentRoomIndex]; } }
@@ -243,10 +253,10 @@ public class TheOneScript : MonoBehaviour
                         rooms[i] = new Room(rooms[i], lightTest);
                         break;
                     case 2:
-                        rooms[i] = new Room(rooms[i], lightTest);
+                        //rooms[i] = new Room(rooms[i], lightTest);
                         break;
                     case 3:
-                        rooms[i] = new Room(rooms[i], lightTest);
+                        //rooms[i] = new Room(rooms[i], lightTest);
                         break;
                 }
             }
@@ -279,6 +289,20 @@ public class TheOneScript : MonoBehaviour
                 return true;
             }
             return false;
+        }
+
+        public void SubscribeToManyHeadDeathEvent(ManyHead manyHead)
+        {
+            foreach (Room room in rooms)
+            {
+                manyHead.DeadEvent += delegate 
+                { 
+                    if (room.RoomTest?.Active == true) 
+                    {
+                        room.RoomTest.Exit();
+                    }
+                };
+            }
         }
     }
 
@@ -562,6 +586,7 @@ public class TheOneScript : MonoBehaviour
     {
         manyHead = new ManyHead(manyHead, head.gameObject, gender);
         manyHead.DeadEvent += delegate { agent.SetState(new AIAgent.DeadState(agent)); };
+        roomManager.SubscribeToManyHeadDeathEvent(manyHead);
         if (gender == 1)
         {
             bodyMesh.material = maleMaterial;

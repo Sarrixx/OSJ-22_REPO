@@ -1874,9 +1874,21 @@ MonoBehaviour:
     - camera: {fileID: 1012918910}
       idlePoint: {fileID: 164218710}
     lightTest:
-      cooldownTime: 1
+      cooldownTime: 5
+      cooldownTimer: 0
       greenLight: {fileID: 1727387364}
       redLight: {fileID: 1211951082}
+      minTime: 1
+      maxTime: 3
+      greenChance: 40
+    shelfTest:
+      cooldownTime: 0
+      cooldownTimer: 0
+      objPlaceLocations: []
+      objSpawnLocations: []
+      objPrefabs: []
+      tvScreenLocations: []
+      objSprites: []
   selectionMenu:
     eggRotateSpeed: 1
     eggATransform: {fileID: 175995699}
