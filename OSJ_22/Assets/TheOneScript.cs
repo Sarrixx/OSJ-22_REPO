@@ -159,6 +159,71 @@ public class TheOneScript : MonoBehaviour
             }
         }
 
+        [System.Serializable]
+        public class ShelfTest : ManyHeadTest
+        {
+            
+            [SerializeField] Transform[] objPlaceLocations; //Where the player places the objects
+            [SerializeField] Transform[] objSpawnLocations; //Where the objects orginally spawn.
+            [SerializeField] GameObject[] objPrefabs;
+            [SerializeField] Image[] tvScreenLocations;
+            [SerializeField] Sprite[] objSprites;
+
+
+
+
+            private float currentTime = 0;
+            private float timer = -1;
+            
+            public ShelfTest(ShelfTest test) : base(test)
+            {
+                objSpawnLocations = test.objSpawnLocations;
+            }
+            
+
+            public event ModifyIntelligence ModifyIntelligenceEvent;
+
+            public void Awake()
+            {
+                
+            }
+
+            public override void Initialise(ModifyIntelligence modifyMethod)
+            {
+                base.Initialise(modifyMethod);
+                timer = 0;
+                currentTime = Random.Range(1, 5);
+                ModifyIntelligenceEvent = new ModifyIntelligence(modifyMethod);
+            }
+
+            public override void Update()
+            {
+                if (Active == true)
+                {
+                    timer += Time.deltaTime;
+                    if (timer >= currentTime)
+                    {
+                        timer = 0;
+                        
+                    }
+                   
+                }
+                else
+                {
+                    base.Update();
+                }
+            }
+
+
+            public override void Exit()
+            {
+                base.Exit();
+                ModifyIntelligenceEvent = null;
+            }
+        }
+
+
+
         [SerializeField] private Room[] rooms;
         [SerializeField] private LightTest lightTest;
 
