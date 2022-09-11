@@ -178,26 +178,17 @@ public class TheOneScript : MonoBehaviour
         {
             
             [SerializeField] Transform[] objPlaceLocations; //Where the player places the objects
-            [SerializeField] GameObject[] moveableObjects; //Where the objects orginally spawn.
-            GameObject currentSelectedObj;
+            [SerializeField] Transform[] objSpawnLocations; //Where the objects orginally spawn.
+            [SerializeField] GameObject[] objPrefabs;
             [SerializeField] Image[] tvScreenLocations;
             [SerializeField] Sprite[] objSprites;
-            [SerializeField] int[] correctOrder; //Set on start
-            [SerializeField] int[] currentOrder; //Change with player
 
-
-            enum ActivityState {idle,show,guess};
-            [SerializeField] ActivityState state = ActivityState.idle;
             private float currentTime = 0;
             private float timer = -1;
             
             public ShelfTest(ShelfTest test) : base(test)
             {
-                objPlaceLocations = test.objPlaceLocations;
-                moveableObjects = test.moveableObjects; 
-                tvScreenLocations = test.tvScreenLocations;
-                objSprites = test.objSprites;
-                state = test.state;
+                objSpawnLocations = test.objSpawnLocations;
             }
             
 
@@ -214,8 +205,6 @@ public class TheOneScript : MonoBehaviour
                 timer = 0;
                 currentTime = Random.Range(1, 5);
                 ModifyIntelligenceEvent = new ModifyIntelligence(modifyMethod);
-                state = ActivityState.idle;
-                ShowOrder();
             }
 
             public override void Update()
@@ -228,42 +217,12 @@ public class TheOneScript : MonoBehaviour
                         timer = 0;
                         
                     }
-                    
+                   
                 }
                 else
                 {
                     base.Update();
                 }
-            }
-
-
-
-            public void ShowOrder()
-            {
-                correctOrder = new int[objPlaceLocations.Length];
-                currentOrder = new int[objPlaceLocations.Length];
-                
-                List<int> placementIndexs = new List<int>(){};
-                
-                    //create list 1-length
-                for (int i = 0; i < correctOrder.Length; i++)
-                {
-                    placementIndexs.Add(i);
-                    currentOrder[i] = -1;
-                    
-                }
-                currentOrder = placementIndexs.ToArray();
-                //Random Order for in correctOrder
-                for (int i = 0; i < correctOrder.Length; i++)
-                {
-                    int randomInd = Random.Range(0, placementIndexs.Count - 2);
-                    int correctInd = placementIndexs[randomInd];
-                    placementIndexs.RemoveAt(randomInd);
-                    
-                    correctOrder[i] = correctInd;
-                }
-
-                //randomize 
             }
 
 
@@ -286,9 +245,7 @@ public class TheOneScript : MonoBehaviour
             ResetEvent += delegate { ActivateRoom(0); };
             lightTest = new LightTest(lightTest);
             lightTest.Awake();
-            shelfTest = new ShelfTest(shelfTest);
-            shelfTest.Awake();
-            for (int i = 0; i < rooms.Length; i++)
+            for(int i = 0; i < rooms.Length; i++)
             {
                 switch (i)
                 {
@@ -296,7 +253,7 @@ public class TheOneScript : MonoBehaviour
                         rooms[i] = new Room(rooms[i], lightTest);
                         break;
                     case 2:
-                        rooms[i] = new Room(rooms[i], shelfTest);
+                        //rooms[i] = new Room(rooms[i], shelfTest);
                         break;
                     case 3:
                         //rooms[i] = new Room(rooms[i], lightTest);
@@ -493,7 +450,7 @@ public class TheOneScript : MonoBehaviour
     [SerializeField] private AIAgent agent;
     [SerializeField] private Material maleMaterial;
     [SerializeField] private Material femaleMaterial;
-    [SerializeField] private MeshRenderer bodyMesh;
+    [SerializeField] private SkinnedMeshRenderer bodyMesh;
     [SerializeField] private Transform headObject;
 
     private Vector3 currentDir = Vector3.right;
@@ -863,7 +820,7 @@ public class AIAgent
         {
             Instance.Busy = false;
             Instance.agent.isStopped = true;
-            Debug.Log("Set state to idle");
+            //Debug.Log("Set state to idle");
         }
 
         public override void OnStateUpdate()
@@ -916,7 +873,7 @@ public class AIAgent
 
         public override void OnStateUpdate()
         {
-            Debug.Log("Moving to position");
+            //Debug.Log("Moving to position");
             if(Instance.agent.remainingDistance <= Instance.agent.stoppingDistance)
             {
                 Instance.stateMachine.SetState(new IdleState(Instance));
