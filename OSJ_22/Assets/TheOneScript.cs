@@ -253,7 +253,7 @@ public class TheOneScript : MonoBehaviour
                         rooms[i] = new Room(rooms[i], lightTest);
                         break;
                     case 2:
-                        //rooms[i] = new Room(rooms[i], lightTest);
+                        //rooms[i] = new Room(rooms[i], shelfTest);
                         break;
                     case 3:
                         //rooms[i] = new Room(rooms[i], lightTest);
@@ -450,7 +450,7 @@ public class TheOneScript : MonoBehaviour
     [SerializeField] private AIAgent agent;
     [SerializeField] private Material maleMaterial;
     [SerializeField] private Material femaleMaterial;
-    [SerializeField] private MeshRenderer bodyMesh;
+    [SerializeField] private SkinnedMeshRenderer bodyMesh;
     [SerializeField] private Transform headObject;
 
     private Vector3 currentDir = Vector3.right;
@@ -820,7 +820,7 @@ public class AIAgent
         {
             Instance.Busy = false;
             Instance.agent.isStopped = true;
-            Debug.Log("Set state to idle");
+            //Debug.Log("Set state to idle");
         }
 
         public override void OnStateUpdate()
@@ -873,7 +873,7 @@ public class AIAgent
 
         public override void OnStateUpdate()
         {
-            Debug.Log("Moving to position");
+            //Debug.Log("Moving to position");
             if(Instance.agent.remainingDistance <= Instance.agent.stoppingDistance)
             {
                 Instance.stateMachine.SetState(new IdleState(Instance));
