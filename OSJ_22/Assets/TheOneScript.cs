@@ -72,6 +72,8 @@ public class TheOneScript : MonoBehaviour
         [System.Serializable]
         public class LightTest : ManyHeadTest
         {
+            [SerializeField] private MeshRenderer redLightbulbMesh, greenLightbulbMesh, buttonMesh;
+            [SerializeField] private Material defaultMat, redMat, greenMat, buttonMat, redButtonMat, greenButtonMat;
             [SerializeField] private Light greenLight, redLight;
             [Range(1, 5)] [SerializeField] private float minTime = 1, maxTime = 5;
             [Range(10, 100)] [SerializeField] private float greenChance = 50;
@@ -86,6 +88,15 @@ public class TheOneScript : MonoBehaviour
                 minTime = test.minTime;
                 maxTime = test.maxTime;
                 greenChance = test.greenChance;
+                redLightbulbMesh = test.redLightbulbMesh;
+                greenLightbulbMesh = test.greenLightbulbMesh;
+                redMat = test.redMat;
+                greenMat = test.greenMat;
+                defaultMat = test.defaultMat;
+                buttonMat = test.buttonMat;
+                redButtonMat = test.redButtonMat;
+                greenButtonMat = test.greenButtonMat;
+                buttonMesh = test.buttonMesh;
             }
 
             public event ModifyIntelligence ModifyIntelligenceEvent;
@@ -102,6 +113,9 @@ public class TheOneScript : MonoBehaviour
                 {
                     base.Initialise(modifyMethod);
                     greenLight.enabled = false;
+                    greenLightbulbMesh.materials = new Material[] { greenLightbulbMesh.materials[0], greenLightbulbMesh.materials[1], defaultMat };
+                    redLightbulbMesh.materials = new Material[] { redLightbulbMesh.materials[0], redLightbulbMesh.materials[1], redMat };
+                    buttonMesh.material = redButtonMat;
                     redLight.enabled = true;
                     timer = 0;
                     currentTime = Random.Range(minTime, maxTime);
@@ -129,14 +143,16 @@ public class TheOneScript : MonoBehaviour
                     {
                         if (greenLight.enabled == true)
                         {
+                            buttonMesh.material = buttonMat;
                             greenLight.enabled = false;
-                            Debug.Log("Successful interaction");
+                            greenLightbulbMesh.materials = new Material[] { greenLightbulbMesh.materials[0], greenLightbulbMesh.materials[1], defaultMat };
                             ModifyIntelligenceEvent.Invoke(20);
                         }
                         else if(redLight.enabled == true)
                         {
+                            buttonMesh.material = buttonMat;
                             redLight.enabled = false;
-                            Debug.Log("Unsuccessful interaction");
+                            redLightbulbMesh.materials = new Material[] { redLightbulbMesh.materials[0], redLightbulbMesh.materials[1], defaultMat };
                             ModifyIntelligenceEvent.Invoke(-20);
                         }
                     }
@@ -152,15 +168,19 @@ public class TheOneScript : MonoBehaviour
                 int r = Random.Range(0, 100);
                 if (r < greenChance)
                 {
-                    Debug.Log("Green light");
                     greenLight.enabled = true;
                     redLight.enabled = false;
+                    buttonMesh.material = greenButtonMat;
+                    greenLightbulbMesh.materials = new Material[] { greenLightbulbMesh.materials[0], greenLightbulbMesh.materials[1], greenMat };
+                    redLightbulbMesh.materials = new Material[] { redLightbulbMesh.materials[0], redLightbulbMesh.materials[1], defaultMat };
                 }
                 else
                 {
-                    Debug.Log("Red light");
                     greenLight.enabled = false;
                     redLight.enabled = true;
+                    buttonMesh.material = redButtonMat;
+                    greenLightbulbMesh.materials = new Material[] { greenLightbulbMesh.materials[0], greenLightbulbMesh.materials[1], defaultMat };
+                    redLightbulbMesh.materials = new Material[] { redLightbulbMesh.materials[0], redLightbulbMesh.materials[1], redMat };
                 }
             }
 
@@ -170,6 +190,9 @@ public class TheOneScript : MonoBehaviour
                 ModifyIntelligenceEvent = null;
                 greenLight.enabled = false;
                 redLight.enabled = false;
+                buttonMesh.material = buttonMat;
+                greenLightbulbMesh.materials = new Material[] { greenLightbulbMesh.materials[0], greenLightbulbMesh.materials[1], defaultMat };
+                redLightbulbMesh.materials = new Material[] { redLightbulbMesh.materials[0], redLightbulbMesh.materials[1], defaultMat };
             }
         }
 
@@ -187,12 +210,13 @@ public class TheOneScript : MonoBehaviour
             [SerializeField] private float guessTime = 5f;
             [SerializeField] private float coolDownTime = 2f;
             [SerializeField] private Camera roomCamera; //Change with player
+            [SerializeField] private Sprite blankText; //Change with player
 
-            private GameObject currentSelectedObj;
-            private GameObject currentTarget;
+            [SerializeField]  private GameObject currentSelectedObj;
+            [SerializeField]  private GameObject currentTarget;
             private int[] correctOrder; //Set on start
             private int[] currentOrder; //Change with player
-            private ActivityState state = ActivityState.show;
+            [SerializeField] private ActivityState state = ActivityState.show;
             private float currentTime = 0;
             private float timer = -1;
 
@@ -209,6 +233,7 @@ public class TheOneScript : MonoBehaviour
                 viewTime = test.viewTime;
                 guessTime = test.guessTime;
                 coolDownTime = test.coolDownTime;
+                blankText = test.blankText;
             }
             
             public void Awake()
@@ -266,6 +291,15 @@ public class TheOneScript : MonoBehaviour
                                     currentTarget.GetComponent<Collider>().enabled = false;
                                     currentSelectedObj = null;
                                     ModifyIntelligenceEvent.Invoke(20);
+                                    bool allCorrect = true;
+                                    for (int i = 0; i < correctOrder.Length; i++)
+                                    {
+                                        if (correctOrder[i] != currentOrder[i])
+                                            allCorrect = false;
+                                    }
+                                    //All correct
+                                    if (allCorrect)
+                                        ChangeActivityState(ActivityState.cooldown);
                                 }
                                 else
                                 {
@@ -286,7 +320,7 @@ public class TheOneScript : MonoBehaviour
                         //Held
                         if (Input.GetButton("Fire1"))
                         {
-                            currentSelectedObj.transform.position = roomCamera.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, -roomCamera.transform.position.z));
+                            
 
                             //raycast for target
                             RaycastHit hit;
@@ -295,11 +329,13 @@ public class TheOneScript : MonoBehaviour
                             {
                                 //Set target
                                 currentTarget = hit.transform.gameObject;
+                                currentSelectedObj.transform.position = currentTarget.transform.position;
                             }
                             else
                             {
                                 //Remove target
                                 currentTarget = null;
+                                currentSelectedObj.transform.position = roomCamera.ScreenToWorldPoint(new Vector3(Input.mousePosition.x, Input.mousePosition.y, -roomCamera.transform.position.z));
                             }
                         }
                     }
@@ -360,7 +396,7 @@ public class TheOneScript : MonoBehaviour
             {
                 foreach (Image item in tvScreenLocations)
                 {
-                    item.sprite = null;
+                    item.sprite = blankText;
                 }
             }
 
@@ -370,6 +406,7 @@ public class TheOneScript : MonoBehaviour
                 //Get ind of current object
                 //get ind of target obj
                 //correctOrder[targetind] == currentObjInd
+                //Debug.Log(currentSelectedObj.name);
                 int targetInd = -1;
                 int selectedObjInd = -1;
                 for (int i = 0; i < objPlaceLocations.Length; i++)
@@ -379,12 +416,14 @@ public class TheOneScript : MonoBehaviour
                 }
                 for (int i = 0; i < moveableObjects.Length; i++)
                 {
-                    if (moveableObjects[i] == currentSelectedObj)
+                    if (moveableObjects[i].gameObject == currentSelectedObj.gameObject)
                         selectedObjInd = i;
                 }
+                //Debug.Log("target: " + targetInd + " selected: " + selectedObjInd + " : correctOrder: " + correctOrder[targetInd]);
                 if (correctOrder[targetInd] == selectedObjInd)
                 {
                     currentOrder[targetInd] = selectedObjInd;
+
                     return true;
                 }
                     
@@ -413,6 +452,7 @@ public class TheOneScript : MonoBehaviour
                 state = newState;
                 if (newState == ActivityState.show)
                 {
+                    ResetActivity();
                     currentTime = viewTime;
                     ShowOrder();
                     foreach (Collider item in moveableObjects)
@@ -434,12 +474,13 @@ public class TheOneScript : MonoBehaviour
                 if (newState == ActivityState.cooldown)
                 {
                     currentTime = coolDownTime;
+                    currentSelectedObj = null;
                     foreach (Collider item in moveableObjects)
                     {
                         item.enabled = false;
                     }
-                    ResetActivity();
-                    HideOrder();
+                    
+                    ShowOrder();
                 }
             }
 
