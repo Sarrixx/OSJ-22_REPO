@@ -1,6 +1,5 @@
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices.WindowsRuntime;
 using UnityEngine;
 using UnityEngine.AI;
 using UnityEngine.UI;
@@ -16,10 +15,12 @@ public class TheOneScript : MonoBehaviour
             [SerializeField] private Camera camera;
             [SerializeField] private Transform idlePoint;
             [SerializeField] [TextArea] private string helpTip;
+            [SerializeField] AudioClip[] transitionClips;
 
             public Transform IdlePoint { get { return idlePoint; } }
             public ManyHeadTest RoomTest { get; private set; }
             public string HelpTip { get { return helpTip; } }
+            public AudioClip[] TransitionClips { get { return transitionClips; } }
 
             public Room(Room room, ManyHeadTest test)
             {
@@ -27,6 +28,7 @@ public class TheOneScript : MonoBehaviour
                 idlePoint = room.idlePoint;
                 RoomTest = test;
                 helpTip = room.helpTip;
+                transitionClips = room.transitionClips;
             }
 
             public void Activate()
@@ -641,9 +643,11 @@ public class TheOneScript : MonoBehaviour
                             {
                                 playerTurn = false;
                                 timer = 0;
+                                maxSteps = 3;
                                 currentStep = 0;
                                 GetNewSequence();
                                 HighlightTile(currentSequence[currentStep], activeMat);
+                                ModifyIntelligenceEvent.Invoke(-20);
                             }
                         }
                     }
@@ -830,12 +834,12 @@ public class TheOneScript : MonoBehaviour
         [SerializeField] private float hungerDepleteRatio = 1;
 
         private float currentHunger = 1;
-        private float currentIntelligence = 0;
-        private int age = 0;
         private float ageTimer = 0;
 
-        public bool Dead { get; private set; }
+        public float CurrentIntelligence { get; private set; } = 0;
+        public int Age { get; private set; } = 0;
         public int Gender { get; private set; } = -1;
+        public bool Dead { get; private set; }
         public GameObject Head { get; private set; }
 
         public event DeadDelegate DeadEvent;
@@ -857,12 +861,12 @@ public class TheOneScript : MonoBehaviour
         {
             if (Dead == false && currentHunger > 0)
             {
-                if(age < ageLimit)
+                if(Age < ageLimit)
                 {
                     ageTimer += Time.deltaTime;
                     if(ageTimer >= yearCycle)
                     {
-                        age++;
+                        Age++;
                         ageTimer = 0;
                     }
                 }
@@ -912,28 +916,32 @@ public class TheOneScript : MonoBehaviour
 
         public void ModifyIntelligence(float amount)
         {
-            currentIntelligence += amount;
-            if(currentIntelligence < 0)
+            CurrentIntelligence += amount;
+            if(CurrentIntelligence < 0)
             {
-                currentIntelligence = 0;
+                CurrentIntelligence = 0;
             }
         }
     }
 
     public delegate void ResetDelegate();
 
-    [SerializeField] private AudioClip camerSwapClip;
+    [SerializeField] private Text camText;
+    [SerializeField] private Text alarmText;
+    [SerializeField] private Text endText;
+    [Header("Food Camera")]
     [SerializeField] private Camera foodCamera;
     [SerializeField] private float foodCameraSpeed = 30f;
     [SerializeField] private float rotationAngle = 90f;
     [SerializeField] private float startingAngle = 45f;
     [SerializeField] private Transform feedPoint;
     [SerializeField] private float feedCooldown;
+    [Header("Rooms")]
     [SerializeField] private float roomTransitionDelay = 1f;
     [SerializeField] private RoomManager roomManager;
     [SerializeField] private ManyHeadSelection selectionMenu;
-    [SerializeField] private Text camText;
-    [SerializeField] private Text alarmText;
+    [SerializeField] private AudioClip camerSwapClip;
+    [Header("Help Panel")]
     [SerializeField] private Text helpText;
     [SerializeField] private RectTransform helpPanel;
     [Header("Many Head/Agent")]
@@ -966,6 +974,7 @@ public class TheOneScript : MonoBehaviour
             camText.text = "";
             helpText.text = "Use the left and right arrow keys or W and A to iterate through options.\n" +
             "\nPress spacebar or enter to confirm your selection.\n\nPress Q to quit the game.";
+            endText.gameObject.SetActive(false);
         };
         bodyMesh.gameObject.SetActive(false);
         agent.Awake();
@@ -978,6 +987,7 @@ public class TheOneScript : MonoBehaviour
         selectionMenu.Start();
         roomManager.ActivateRoom(0);
         foodCamera.gameObject.SetActive(false);
+        endText.gameObject.SetActive(false);
         camText.text = "";
         helpText.text = "Use the left and right arrow keys or W and A to iterate through options.\n" +
         "\nPress spacebar or enter to confirm your selection.\n\nPress Q to quit the game.";
@@ -1128,12 +1138,17 @@ public class TheOneScript : MonoBehaviour
     {
         if (roomManager.ActivateRoom(roomIndex) == true)
         {
-            //audioSource.PlayOneShot(); play random transition SFX for current room
             audioSource.PlayOneShot(camerSwapClip);
+            helpText.text = roomManager.CurrentRoom.HelpTip;
+            if (roomManager.CurrentRoom.TransitionClips.Length > 0 && manyHead.Dead == false)
+            {
+                yield return new WaitForSeconds(0.2f);
+                audioSource.clip = roomManager.CurrentRoom.TransitionClips[Random.Range(0, roomManager.CurrentRoom.TransitionClips.Length)];
+                audioSource.Play();
+            }
             transitioning = true;
             yield return new WaitForSeconds(roomTransitionDelay);
             transitioning = false;
-            helpText.text = roomManager.CurrentRoom.HelpTip;
             agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
         }
     }
@@ -1150,6 +1165,10 @@ public class TheOneScript : MonoBehaviour
             {
                 agent.AudioSource.enabled = false;
             }
+            endText.gameObject.SetActive(true);
+            endText.text = "Your Many Head's attributes are as follows.\n" +
+            "\nIntelligence: " + manyHead.CurrentIntelligence +
+            "\nAge: " + manyHead.Age;
         };
         roomManager.SubscribeToManyHeadDeathEvent(manyHead);
         if (gender == 1)
