@@ -506,6 +506,8 @@ public class TheOneScript : MonoBehaviour
             [SerializeField] private MeshRenderer[] cells;
             [SerializeField] private Material defaultMat, activeMat, correctMat;
             [SerializeField] private float activeTime = 1, turnTime = 3, intervalTime = 1;
+            [SerializeField] private Text screenText;
+            [SerializeField] private Light screenLight;
 
             private int maxSteps = 3;
             private int currentStep = 0;
@@ -525,6 +527,14 @@ public class TheOneScript : MonoBehaviour
                 activeTime = test.activeTime;
                 turnTime = test.turnTime;
                 intervalTime = test.intervalTime;
+                screenText = test.screenText;
+                screenLight = test.screenLight;
+            }
+
+            public void Awake()
+            {
+                screenText.text = "";
+                screenLight.gameObject.SetActive(false);
             }
 
             public override void Initialise(ModifyIntelligence modifyMethod)
@@ -661,6 +671,8 @@ public class TheOneScript : MonoBehaviour
             public override void Exit()
             {
                 base.Exit();
+                screenText.text = "";
+                screenLight.gameObject.SetActive(false);
                 currentStep = 0;
                 ClearBoard();
                 timer = -1;
@@ -698,6 +710,8 @@ public class TheOneScript : MonoBehaviour
                     if (i == index)
                     {
                         cells[i].materials = new Material[] { cells[i].materials[0], mat };
+                        screenText.text = (i + 1).ToString();
+                        screenLight.gameObject.SetActive(true);
                     }
                     else
                     {
@@ -711,6 +725,8 @@ public class TheOneScript : MonoBehaviour
                 foreach(MeshRenderer cell in cells)
                 {
                     cell.materials = new Material[] { cell.materials[0], defaultMat };
+                    screenText.text = "";
+                    screenLight.gameObject.SetActive(false);
                 }
             }
 
@@ -761,6 +777,7 @@ public class TheOneScript : MonoBehaviour
             shelfTest = new ShelfTest(shelfTest);
             shelfTest.Awake();
             gridTest = new GridTest(gridTest);
+            gridTest.Awake();
             for (int i = 0; i < rooms.Length; i++)
             {
                 switch (i)
