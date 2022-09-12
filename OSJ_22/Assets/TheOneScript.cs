@@ -15,15 +15,18 @@ public class TheOneScript : MonoBehaviour
         {
             [SerializeField] private Camera camera;
             [SerializeField] private Transform idlePoint;
+            [SerializeField] [TextArea] private string helpTip;
 
             public Transform IdlePoint { get { return idlePoint; } }
             public ManyHeadTest RoomTest { get; private set; }
+            public string HelpTip { get { return helpTip; } }
 
             public Room(Room room, ManyHeadTest test)
             {
                 camera = room.camera;
                 idlePoint = room.idlePoint;
                 RoomTest = test;
+                helpTip = room.helpTip;
             }
 
             public void Activate()
@@ -827,7 +830,6 @@ public class TheOneScript : MonoBehaviour
         [SerializeField] private float hungerDepleteRatio = 1;
 
         private float currentHunger = 1;
-        [SerializeField]
         private float currentIntelligence = 0;
         private int age = 0;
         private float ageTimer = 0;
@@ -932,6 +934,8 @@ public class TheOneScript : MonoBehaviour
     [SerializeField] private ManyHeadSelection selectionMenu;
     [SerializeField] private Text camText;
     [SerializeField] private Text alarmText;
+    [SerializeField] private Text helpText;
+    [SerializeField] private RectTransform helpPanel;
     [Header("Many Head/Agent")]
     [SerializeField] private ManyHead manyHead;
     [SerializeField] private AIAgent agent;
@@ -941,8 +945,11 @@ public class TheOneScript : MonoBehaviour
     [SerializeField] private Transform headObject;
 
     private float foodTimer = -1;
+    private float helpTimer = -1;
     private AudioSource audioSource;
     private bool transitioning = false;
+    private Vector3 helpPanelDefaultPos;
+    private Vector3 helpPanelTargetPos;
 
     public static event ResetDelegate ResetEvent;
 
@@ -957,6 +964,8 @@ public class TheOneScript : MonoBehaviour
             bodyMesh.gameObject.SetActive(false);
             foodCamera.gameObject.SetActive(false);
             camText.text = "";
+            helpText.text = "Use the left and right arrow keys or W and A to iterate through options.\n" +
+            "\nPress spacebar or enter to confirm your selection.\n\nPress Q to quit the game.";
         };
         bodyMesh.gameObject.SetActive(false);
         agent.Awake();
@@ -970,6 +979,10 @@ public class TheOneScript : MonoBehaviour
         roomManager.ActivateRoom(0);
         foodCamera.gameObject.SetActive(false);
         camText.text = "";
+        helpText.text = "Use the left and right arrow keys or W and A to iterate through options.\n" +
+        "\nPress spacebar or enter to confirm your selection.\n\nPress Q to quit the game.";
+        helpPanelDefaultPos = helpPanel.position;
+        helpPanelTargetPos = helpPanelDefaultPos + new Vector3(helpPanel.rect.width + 50, 0, 0);
     }
 
     public void Update()
@@ -977,11 +990,43 @@ public class TheOneScript : MonoBehaviour
         manyHead.Update();
         selectionMenu.Update();
         roomManager.Update();
-        //alarmText.text = string.Format("{00:00}:{01:00}", System.DateTime.UtcNow.ToLocalTime().Hour, System.DateTime.UtcNow.ToLocalTime().Minute);
+        if (Input.GetKeyDown(KeyCode.Q) == true)
+        {
+            Application.Quit();
+        }
+        else if (Input.GetKeyDown(KeyCode.H) == true && helpTimer == -1)
+        {
+            //open help menu
+            helpTimer = 0;
+        }
+        else if(helpTimer >= 0)
+        {
+            helpTimer += Time.deltaTime;
+            if (helpPanelTargetPos == helpPanelDefaultPos)
+            {
+                helpPanel.position = Vector3.Lerp(helpPanel.position, helpPanelDefaultPos, helpTimer / 0.5f);
+            }
+            else
+            {
+                helpPanel.position = Vector3.Lerp(helpPanel.position, helpPanelTargetPos, helpTimer / 0.5f);
+            }
+            if (helpTimer >= 0.5f)
+            {
+                helpTimer = -1;
+                if (helpPanelTargetPos == helpPanelDefaultPos)
+                {
+                    helpPanelTargetPos = helpPanelDefaultPos + new Vector3(helpPanel.rect.width + 50, 0, 0);
+                }
+                else
+                {
+                    helpPanelTargetPos = helpPanelDefaultPos;
+                }
+            }
+        }
         alarmText.text = string.Format("{0:hh:mm tt}", System.DateTime.Now);
         if (manyHead.Dead == true)
         {
-            if (Input.GetKeyDown(KeyCode.R) == true)
+            if (Input.GetKeyDown(KeyCode.F) == true)
             {
                 ResetEvent.Invoke();
             }
@@ -1004,6 +1049,7 @@ public class TheOneScript : MonoBehaviour
                     audioSource.PlayOneShot(camerSwapClip);
                     agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
                     camText.gameObject.SetActive(true);
+                    helpText.text = roomManager.CurrentRoom.HelpTip;
                 }
             }
             if (agent.Busy == false)
@@ -1039,7 +1085,6 @@ public class TheOneScript : MonoBehaviour
                     }
                     else if(Input.GetButtonDown("Submit") == true)
                     {
-                        //start the puzzle for the room
                         roomManager.CurrentRoom.RoomTest?.Initialise(Respond);
                     }
                     else if (foodTimer == -1 && Input.GetButtonDown("Fire1") == true)
@@ -1048,6 +1093,9 @@ public class TheOneScript : MonoBehaviour
                         camText.gameObject.SetActive(false);
                         audioSource.PlayOneShot(camerSwapClip);
                         agent.SetState(new AIAgent.MoveState(agent, feedPoint.position));
+
+                        helpText.text = "Left click or press left control with the crosshair over your Many Head to feed it.\n" +
+                            "\nPress escape to cancel. Press Q to quit the game.";
                     }
                 }
             }
@@ -1085,6 +1133,7 @@ public class TheOneScript : MonoBehaviour
             transitioning = true;
             yield return new WaitForSeconds(roomTransitionDelay);
             transitioning = false;
+            helpText.text = roomManager.CurrentRoom.HelpTip;
             agent.SetState(new AIAgent.MoveState(agent, roomManager.CurrentRoom.IdlePoint.position));
         }
     }
@@ -1092,7 +1141,16 @@ public class TheOneScript : MonoBehaviour
     public void SpawnManyHead(Transform head, int gender)
     {
         manyHead = new ManyHead(manyHead, head.gameObject, gender);
-        manyHead.DeadEvent += delegate { agent.SetState(new AIAgent.DeadState(agent)); };
+        manyHead.DeadEvent += delegate 
+        { 
+            agent.SetState(new AIAgent.DeadState(agent));
+            helpText.text = "Your Many Head has died. Press F to create a new one.\n" +
+            "\nPress Q to quit the game.";
+            if (head.name.Contains("radio") == true)
+            {
+                agent.AudioSource.enabled = false;
+            }
+        };
         roomManager.SubscribeToManyHeadDeathEvent(manyHead);
         if (gender == 1)
         {
@@ -1109,7 +1167,13 @@ public class TheOneScript : MonoBehaviour
         agent.MoveToPosition(roomManager.CurrentRoom.IdlePoint.position);
         agent.SetState(new AIAgent.IdleState(agent));
         camText.text = "FEEDING ROOM";
+        helpText.text = roomManager.CurrentRoom.HelpTip;
+        agent.Anim.SetBool("dead", false);
         agent.Anim.SetTrigger("birth");
+        if(head.name.Contains("radio") == true)
+        {
+            agent.AudioSource.enabled = true;
+        }
     }
 
     public IEnumerator ShootFood()
@@ -1313,6 +1377,7 @@ public class AIAgent
 
     private FiniteStateMachine stateMachine;
 
+    public AudioSource AudioSource { get; private set; }
     public bool Busy { get; private set; } = false;
     public Animator Anim { get { return animator; } }
 
@@ -1373,7 +1438,7 @@ public class AIAgent
         {
             Instance.Busy = false;
             Instance.agent.isStopped = true;
-            Instance.animator.SetTrigger("dead");
+            Instance.animator.SetBool("dead", true);
         }
     }
 
@@ -1419,6 +1484,11 @@ public class AIAgent
     public void Awake()
     {
         stateMachine = new FiniteStateMachine();
+        if(agent.TryGetComponent(out AudioSource aSrc) == true)
+        {
+            AudioSource = aSrc;
+        }
+        AudioSource.enabled = false;
     }
 
     public void Update()
